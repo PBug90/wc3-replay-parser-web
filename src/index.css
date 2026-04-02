@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0b0b0e;
+  --surface: #111116;
+  --border: #1e1e26;
+  --border-hi: #2e2e3a;
+  --text: #ededee;
+  --muted: #46464f;
+  --accent: #f0c040;
+  --accent-lo: rgba(240, 192, 64, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Typography shortcuts ─────────────────────────────── */
+.font-display {
+  font-family: 'Oswald', sans-serif;
+}
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Drop zone ────────────────────────────────────────── */
+.drop-zone {
+  border: 1px dashed var(--border-hi);
+  background: transparent;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  cursor: pointer;
+}
+.drop-zone:hover,
+.drop-zone.dragging {
+  border-color: var(--accent);
+  background: var(--accent-lo);
+}
+.drop-zone.dragging {
+  border-style: solid;
+}
+
+/* ── Flat button ──────────────────────────────────────── */
+.btn-flat {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 0.375rem 0.875rem;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
+  line-height: 1;
+  white-space: nowrap;
+}
+.btn-flat:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--border-hi);
+}
+.btn-flat:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Accent button ────────────────────────────────────── */
+.btn-accent {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--bg);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 0.375rem 1rem;
+  cursor: pointer;
+  transition: opacity 0.12s;
+  line-height: 1;
+}
+.btn-accent:hover {
+  opacity: 0.85;
+}
+
+/* ── Section label ────────────────────────────────────── */
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Divider ──────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Fade-in utility ──────────────────────────────────── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: fadeUp 0.3s ease both;
+}
+
+@keyframes steam {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scaleX(1);
+  }
+  25% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scaleX(1.4);
+  }
+}
+.steam-wrap {
+  position: relative;
+  display: inline-block;
+}
+.steam {
+  position: absolute;
+  bottom: 80%;
+  width: 2px;
+  height: 6px;
+  border-radius: 1px;
+  background: #0b0b0e;
+  opacity: 0;
+  animation: steam 1.4s ease-in infinite;
+}
+.steam:nth-child(1) {
+  left: 28%;
+  animation-delay: 0s;
+}
+.steam:nth-child(2) {
+  left: 50%;
+  animation-delay: 0.45s;
+}
+.steam:nth-child(3) {
+  left: 72%;
+  animation-delay: 0.9s;
+}
