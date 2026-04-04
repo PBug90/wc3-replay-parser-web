@@ -4,3 +4,5 @@ dist
 .env.local
 .claude
 tsconfig.tsbuildinfo
+test-results
+playwright-report

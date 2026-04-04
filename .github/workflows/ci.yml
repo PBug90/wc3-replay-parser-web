@@ -22,6 +22,12 @@ jobs:
       - name: Build
         run: npm run build -- --base=/${{ github.event.repository.name }}/
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        run: npm run test:e2e
+
       - name: Upload pages artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3

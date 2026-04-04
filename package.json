@@ -12,13 +12,16 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint . && prettier --check .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@fontsource/oswald": "^5.2.8",
     "@fontsource/outfit": "^5.2.8",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.5.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
