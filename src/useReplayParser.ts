@@ -11,6 +11,7 @@ export interface ReplayParserState {
   loading: boolean
   error: string | null
   fileName: string | null
+  inputReplayBuffer: ArrayBuffer | null
   parseFile: (file: File) => void
   parseUrl: (url: string) => void
   parseBuffer: (buffer: ArrayBuffer, name: string) => void
@@ -23,6 +24,7 @@ export function useReplayParser(): ReplayParserState {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
+  const [inputReplayBuffer, setInputReplayBuffer] = useState<ArrayBuffer | null>(null)
 
   const parseBuffer = useCallback(async (arrayBuffer: ArrayBuffer, name: string) => {
     setLoading(true)
@@ -30,6 +32,7 @@ export function useReplayParser(): ReplayParserState {
     setReplay(null)
     setActions([])
     setFileName(name)
+    setInputReplayBuffer(arrayBuffer)
     try {
       const buffer = Buffer.from(arrayBuffer)
       const parser = new W3GReplay()
@@ -102,7 +105,19 @@ export function useReplayParser(): ReplayParserState {
     setActions([])
     setError(null)
     setFileName(null)
+    setInputReplayBuffer(null)
   }, [])
 
-  return { replay, actions, loading, error, fileName, parseFile, parseUrl, parseBuffer, reset }
+  return {
+    replay,
+    actions,
+    loading,
+    error,
+    fileName,
+    inputReplayBuffer,
+    parseFile,
+    parseUrl,
+    parseBuffer,
+    reset,
+  }
 }

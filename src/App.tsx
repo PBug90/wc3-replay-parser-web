@@ -8,8 +8,18 @@ import W3CMatchBrowser from './components/W3CMatchBrowser'
 type Tab = 'upload' | 'w3c'
 
 export default function App() {
-  const { replay, actions, loading, error, fileName, parseFile, parseUrl, parseBuffer, reset } =
-    useReplayParser()
+  const {
+    replay,
+    actions,
+    loading,
+    error,
+    fileName,
+    inputReplayBuffer,
+    parseFile,
+    parseUrl,
+    parseBuffer,
+    reset,
+  } = useReplayParser()
   const [tab, setTab] = useState<Tab>('upload')
 
   const showResults = replay && !loading
@@ -183,6 +193,35 @@ export default function App() {
                 </svg>
                 PARSE ANOTHER REPLAY
               </button>
+              {inputReplayBuffer && (
+                <button
+                  className="btn-flat"
+                  style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}
+                  onClick={() => {
+                    const blob = new Blob([inputReplayBuffer], { type: 'application/octet-stream' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = fileName ?? 'replay.w3g'
+                    a.click()
+                    URL.revokeObjectURL(url)
+                  }}
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="square"
+                  >
+                    <path d="M12 5v14M5 12l7 7 7-7" />
+                    <path d="M5 19h14" />
+                  </svg>
+                  DOWNLOAD REPLAY
+                </button>
+              )}
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
               <span
                 className="font-mono"

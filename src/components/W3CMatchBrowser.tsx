@@ -1,65 +1,12 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-
-const API_BASE = 'https://website-backend.w3champions.com/api'
-const PAGE_SIZE = 10
-const SUGGESTION_LIMIT = 8
-
-const RACE_LABELS: Record<number, string> = {
-  1: 'HU',
-  2: 'OC',
-  4: 'NE',
-  8: 'UD',
-  16: 'RN',
-}
-
-interface Player {
-  battleTag: string
-  race: number
-  won: boolean
-  currentMmr?: number
-  mmrGain?: number
-}
-
-interface Match {
-  id: string
-  mapName: string
-  teams: Array<{ players: Player[] }>
-  endTime: string
-  gameMode: number
-  durationInSeconds: number
-}
-
-interface LadderEntry {
-  player: {
-    playerIds: Array<{ battleTag: string }>
-    mmr: number
-  }
-}
+import { useState, useCallback, useEffect } from 'react'
+import { fetchMatches, fetchReplay, fetchTopPlayerTags, GATEWAYS, Match } from '../api/w3c'
+import PlayerSearchInput from './PlayerSearchInput'
+import MatchList from './MatchList'
 
 interface Props {
   loading: boolean
   onBuffer: (buffer: ArrayBuffer, name: string) => void
 }
-
-function fmtDuration(secs: number) {
-  const m = Math.floor(secs / 60)
-  const s = secs % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
-const GATEWAYS = [
-  { label: 'Europe', value: '20' },
-  { label: 'Americas', value: '10' },
-  { label: 'Asia', value: '30' },
-]
 
 export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
   const [tag, setTag] = useState('')
@@ -71,86 +18,30 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
   const [fetching, setFetching] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
-
-  // Autocomplete
   const [topPlayers, setTopPlayers] = useState<string[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [activeSuggestion, setActiveSuggestion] = useState(-1)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const suggestionsRef = useRef<HTMLDivElement>(null)
 
-  // Fetch top ~250 players by MMR (GM + Master + Adept div 1) when season/gateway changes
   useEffect(() => {
     let cancelled = false
-    async function fetchTopPlayers() {
-      try {
-        const [gm, master, adept] = await Promise.all(
-          [0, 1, 2].map((leagueId) =>
-            fetch(`${API_BASE}/ladder/${leagueId}?season=${season}&gateWay=${gateway}&gameMode=1`)
-              .then((r) => (r.ok ? r.json() : []))
-              .catch(() => []),
-          ),
-        )
-        if (cancelled) return
-        const combined: LadderEntry[] = [...(gm ?? []), ...(master ?? []), ...(adept ?? [])]
-        combined.sort((a, b) => (b.player?.mmr ?? 0) - (a.player?.mmr ?? 0))
-        const tags = combined
-          .slice(0, 250)
-          .map((e) => e.player?.playerIds?.[0]?.battleTag)
-          .filter(Boolean) as string[]
-        setTopPlayers(tags)
-      } catch {
-        // silently ignore — autocomplete is best-effort
-      }
-    }
-    fetchTopPlayers()
+    fetchTopPlayerTags(season, gateway)
+      .then((tags) => {
+        if (!cancelled) setTopPlayers(tags)
+      })
+      .catch(() => {})
     return () => {
       cancelled = true
     }
   }, [season, gateway])
 
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (
-        !inputRef.current?.contains(e.target as Node) &&
-        !suggestionsRef.current?.contains(e.target as Node)
-      ) {
-        setShowSuggestions(false)
-        setActiveSuggestion(-1)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
-  const trimmedLower = tag.trim().toLowerCase()
-  const suggestions =
-    trimmedLower.length > 0
-      ? topPlayers.filter((t) => t.toLowerCase().includes(trimmedLower)).slice(0, SUGGESTION_LIMIT)
-      : []
-
   const search = useCallback(
     async (newOffset = 0) => {
       const trimmed = tag.trim()
       if (!trimmed) return
-      setShowSuggestions(false)
-      setActiveSuggestion(-1)
       setFetching(true)
       setFetchError(null)
       try {
-        const params = new URLSearchParams({
-          playerId: trimmed,
-          gateway,
-          season,
-          offset: String(newOffset),
-          pageSize: String(PAGE_SIZE),
-        })
-        const res = await fetch(`${API_BASE}/matches/search?${params}`)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data = await res.json()
-        setMatches(data.matches ?? [])
-        setCount(data.count ?? 0)
+        const { matches: m, count: c } = await fetchMatches(trimmed, gateway, season, newOffset)
+        setMatches(m)
+        setCount(c)
         setOffset(newOffset)
       } catch (e) {
         setFetchError(e instanceof Error ? e.message : 'Request failed')
@@ -162,14 +53,12 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
     [tag, season, gateway],
   )
 
-  const parseReplay = useCallback(
+  const handleSelectMatch = useCallback(
     async (match: Match) => {
       setDownloadingId(match.id)
       setFetchError(null)
       try {
-        const res = await fetch(`${API_BASE}/replays/${match.id}`)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const buffer = await res.arrayBuffer()
+        const buffer = await fetchReplay(match.id)
         onBuffer(buffer, `${match.id}.w3g`)
       } catch (e) {
         setFetchError(e instanceof Error ? e.message : 'Failed to download replay')
@@ -180,124 +69,17 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
     [onBuffer],
   )
 
-  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (showSuggestions && suggestions.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        setActiveSuggestion((i) => Math.min(i + 1, suggestions.length - 1))
-        return
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        setActiveSuggestion((i) => Math.max(i - 1, -1))
-        return
-      }
-      if (e.key === 'Escape') {
-        setShowSuggestions(false)
-        setActiveSuggestion(-1)
-        return
-      }
-      if (e.key === 'Enter' && activeSuggestion >= 0) {
-        e.preventDefault()
-        setTag(suggestions[activeSuggestion])
-        setShowSuggestions(false)
-        setActiveSuggestion(-1)
-        return
-      }
-    }
-    if (e.key === 'Enter') search(0)
-  }
-
-  const tagLower = tag.trim().toLowerCase()
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* Search bar */}
-      <div style={{ display: 'flex', gap: '.5rem', position: 'relative' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <input
-            ref={inputRef}
-            type="text"
-            value={tag}
-            onChange={(e) => {
-              setTag(e.target.value)
-              setShowSuggestions(true)
-              setActiveSuggestion(-1)
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            onKeyDown={handleInputKeyDown}
-            placeholder="BattleTag — e.g. Grubby#2759"
-            disabled={fetching || loading}
-            className="font-mono"
-            style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              background: 'var(--surface)',
-              border: '1px solid var(--border-hi)',
-              color: 'var(--text)',
-              padding: '.5rem .75rem',
-              fontSize: '.78rem',
-              letterSpacing: '.03em',
-              outline: 'none',
-            }}
-          />
-
-          {/* Autocomplete dropdown */}
-          {showSuggestions && suggestions.length > 0 && (
-            <div
-              ref={suggestionsRef}
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
-                zIndex: 100,
-                background: 'var(--surface)',
-                border: '1px solid var(--border-hi)',
-                borderTop: 'none',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              {suggestions.map((s, i) => {
-                const name = s.split('#')[0]
-                const tag2 = s.split('#')[1]
-                return (
-                  <div
-                    key={s}
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      setTag(s)
-                      setShowSuggestions(false)
-                      setActiveSuggestion(-1)
-                      inputRef.current?.focus()
-                    }}
-                    style={{
-                      padding: '.35rem .75rem',
-                      cursor: 'pointer',
-                      background: i === activeSuggestion ? 'var(--bg)' : 'transparent',
-                      borderTop: i > 0 ? '1px solid var(--border)' : 'none',
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      gap: '.375rem',
-                    }}
-                    onMouseEnter={() => setActiveSuggestion(i)}
-                    onMouseLeave={() => setActiveSuggestion(-1)}
-                  >
-                    <span style={{ fontSize: '.78rem', color: 'var(--text)' }}>{name}</span>
-                    <span
-                      className="font-mono"
-                      style={{ fontSize: '.65rem', color: 'var(--muted)' }}
-                    >
-                      #{tag2}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
+      <div style={{ display: 'flex', gap: '.5rem' }}>
+        <PlayerSearchInput
+          value={tag}
+          onChange={setTag}
+          onSearch={() => search(0)}
+          disabled={fetching || loading}
+          topPlayers={topPlayers}
+        />
         <button
           className="btn-flat"
           onClick={() => search(0)}
@@ -385,139 +167,17 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
 
       {/* Match list */}
       {matches.length > 0 && (
-        <div
-          style={{ border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}
-        >
-          {matches.map((match, i) => {
-            const allPlayers = match.teams?.flatMap((t) => t.players) ?? []
-            const me = allPlayers.find((p) => p.battleTag.toLowerCase() === tagLower)
-            const opponents = allPlayers.filter((p) => p.battleTag.toLowerCase() !== tagLower)
-            const won = me?.won ?? false
-            const isLoading = downloadingId === match.id
-
-            return (
-              <div
-                key={match.id}
-                onClick={() => !loading && !downloadingId && parseReplay(match)}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '28px 1fr 1fr 52px 90px',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '.6rem 1rem',
-                  borderTop: i > 0 ? '1px solid var(--border)' : 'none',
-                  cursor: loading || !!downloadingId ? 'default' : 'pointer',
-                  opacity: !!downloadingId && !isLoading ? 0.4 : 1,
-                  transition: 'background .1s',
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading && !downloadingId)
-                    (e.currentTarget as HTMLElement).style.background = 'var(--surface)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = ''
-                }}
-              >
-                {/* W / L */}
-                <span
-                  className="font-mono"
-                  style={{
-                    fontSize: '.62rem',
-                    fontWeight: 700,
-                    letterSpacing: '.04em',
-                    color: won ? '#4ade80' : '#f87171',
-                    border: `1px solid ${won ? '#4ade80' : '#f87171'}`,
-                    padding: '1px 3px',
-                    textAlign: 'center',
-                  }}
-                >
-                  {won ? 'W' : 'L'}
-                </span>
-
-                {/* Map */}
-                <span
-                  style={{
-                    fontSize: '.78rem',
-                    color: 'var(--text)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {match.mapName ?? '—'}
-                </span>
-
-                {/* Opponents */}
-                <span
-                  className="font-mono"
-                  style={{
-                    fontSize: '.7rem',
-                    color: 'var(--muted)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  vs{' '}
-                  {opponents
-                    .map((p) => {
-                      const name = p.battleTag.split('#')[0]
-                      const race = RACE_LABELS[p.race]
-                      return race ? `${name} (${race})` : name
-                    })
-                    .join(', ')}
-                </span>
-
-                {/* Duration */}
-                <span
-                  className="font-mono"
-                  style={{ fontSize: '.68rem', color: 'var(--muted)', textAlign: 'right' }}
-                >
-                  {fmtDuration(match.durationInSeconds ?? 0)}
-                </span>
-
-                {/* Date / status */}
-                <span
-                  className="font-mono"
-                  style={{
-                    fontSize: '.68rem',
-                    color: isLoading ? 'var(--accent)' : 'var(--muted)',
-                    textAlign: 'right',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {isLoading ? 'Downloading…' : fmtDate(match.endTime)}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {count > PAGE_SIZE && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
-          <button
-            className="btn-flat"
-            disabled={offset === 0 || fetching}
-            onClick={() => search(offset - PAGE_SIZE)}
-          >
-            ← PREV
-          </button>
-          <span
-            className="font-mono"
-            style={{ fontSize: '.68rem', color: 'var(--muted)', flex: 1, textAlign: 'center' }}
-          >
-            {offset + 1}–{Math.min(offset + PAGE_SIZE, count)} of {count}
-          </span>
-          <button
-            className="btn-flat"
-            disabled={offset + PAGE_SIZE >= count || fetching}
-            onClick={() => search(offset + PAGE_SIZE)}
-          >
-            NEXT →
-          </button>
-        </div>
+        <MatchList
+          matches={matches}
+          tagLower={tag.trim().toLowerCase()}
+          downloadingId={downloadingId}
+          loading={loading}
+          fetching={fetching}
+          count={count}
+          offset={offset}
+          onSelectMatch={handleSelectMatch}
+          onPageChange={search}
+        />
       )}
     </div>
   )
