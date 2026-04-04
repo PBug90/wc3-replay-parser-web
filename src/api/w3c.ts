@@ -89,10 +89,14 @@ export async function fetchTopPlayerTags(season: string, gateway: string): Promi
 
   const combined = leagues.flat()
   combined.sort((a, b) => (b.player?.mmr ?? 0) - (a.player?.mmr ?? 0))
-  const tags = combined
-    .slice(0, 250)
-    .map((e) => e.player?.playerIds?.[0]?.battleTag)
-    .filter(Boolean) as string[]
+
+  const seen = new Set<string>()
+  for (const entry of combined) {
+    const battleTag = entry.player?.playerIds?.[0]?.battleTag
+    if (battleTag) seen.add(battleTag)
+    if (seen.size === 250) break
+  }
+  const tags = [...seen]
 
   try {
     localStorage.setItem(cacheKey, JSON.stringify({ tags, fetchedAt: Date.now() }))

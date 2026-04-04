@@ -77,6 +77,7 @@ const MAP_DB: Record<string, MapInfo> = {
     width: 13824, // 108 tiles
     height: 11008, // 86 tiles
     image: `${base}/maps/northernisles.png`,
+    offset_x: 2040,
   },
   scrimmage: {
     displayName: 'Scrimmage',

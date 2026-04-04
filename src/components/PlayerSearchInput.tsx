@@ -25,9 +25,10 @@ export default function PlayerSearchInput({
   const trimmedLower = value.trim().toLowerCase()
   const suggestions =
     trimmedLower.length > 0
-      ? topPlayers.filter((t) => t.toLowerCase().includes(trimmedLower)).slice(0, SUGGESTION_LIMIT)
+      ? topPlayers
+          .filter((t) => t.split('#')[0].toLowerCase().includes(trimmedLower))
+          .slice(0, SUGGESTION_LIMIT)
       : []
-
   function selectSuggestion(tag: string) {
     onChange(tag)
     setShowSuggestions(false)

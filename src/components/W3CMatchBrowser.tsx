@@ -19,6 +19,7 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [topPlayers, setTopPlayers] = useState<string[]>([])
+  const [lastSearchedTag, setLastSearchedTag] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -38,6 +39,7 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
       if (!trimmed) return
       setFetching(true)
       setFetchError(null)
+      setLastSearchedTag(trimmed)
       try {
         const { matches: m, count: c } = await fetchMatches(trimmed, gateway, season, newOffset)
         setMatches(m)
@@ -161,7 +163,9 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
             margin: 0,
           }}
         >
-          Enter a BattleTag to browse recent W3Champions matches
+          {lastSearchedTag
+            ? `No matches found for ${lastSearchedTag}`
+            : 'Enter a BattleTag to browse recent W3Champions matches'}
         </p>
       )}
 
