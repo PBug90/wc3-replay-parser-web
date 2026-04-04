@@ -1,5 +1,5 @@
 import { RACE_LABELS, HERO_NAMES, HERO_RACE_BG } from './constants'
-import { UNIT_NAMES, UPGRADE_NAMES, ABILITY_NAMES } from './w3g-names'
+import { UNIT_NAMES, UPGRADE_NAMES, ABILITY_NAMES, BUILDING_NAMES } from './w3g-names'
 
 export function formatDuration(ms: number): string {
   const totalSec = Math.floor(ms / 1000)
@@ -12,7 +12,7 @@ export function formatGameTime(ms: number): string {
   const totalSec = Math.floor(ms / 1000)
   const m = Math.floor(totalSec / 60)
   const s = totalSec % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
 export const getRaceLabel = (race: string) => RACE_LABELS[race] ?? race
@@ -38,3 +38,4 @@ export const abilityLabel = (id: string) => {
   const raw = ABILITY_NAMES[id]
   return raw ? raw.replace(/^a_[^:]+:/, '') : id
 }
+export const buildingLabel = (id: string) => BUILDING_NAMES[id] ?? id

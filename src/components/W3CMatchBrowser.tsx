@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 
 const API_BASE = 'https://website-backend.w3champions.com/api'
 const PAGE_SIZE = 10
+const SUGGESTION_LIMIT = 8
 
 const RACE_LABELS: Record<number, string> = {
   1: 'HU',
@@ -26,6 +27,13 @@ interface Match {
   endTime: string
   gameMode: number
   durationInSeconds: number
+}
+
+interface LadderEntry {
+  player: {
+    playerIds: Array<{ battleTag: string }>
+    mmr: number
+  }
 }
 
 interface Props {
@@ -64,10 +72,70 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
+  // Autocomplete
+  const [topPlayers, setTopPlayers] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [activeSuggestion, setActiveSuggestion] = useState(-1)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
+
+  // Fetch top ~250 players by MMR (GM + Master + Adept div 1) when season/gateway changes
+  useEffect(() => {
+    let cancelled = false
+    async function fetchTopPlayers() {
+      try {
+        const [gm, master, adept] = await Promise.all(
+          [0, 1, 2].map((leagueId) =>
+            fetch(`${API_BASE}/ladder/${leagueId}?season=${season}&gateWay=${gateway}&gameMode=1`)
+              .then((r) => (r.ok ? r.json() : []))
+              .catch(() => []),
+          ),
+        )
+        if (cancelled) return
+        const combined: LadderEntry[] = [...(gm ?? []), ...(master ?? []), ...(adept ?? [])]
+        combined.sort((a, b) => (b.player?.mmr ?? 0) - (a.player?.mmr ?? 0))
+        const tags = combined
+          .slice(0, 250)
+          .map((e) => e.player?.playerIds?.[0]?.battleTag)
+          .filter(Boolean) as string[]
+        setTopPlayers(tags)
+      } catch {
+        // silently ignore — autocomplete is best-effort
+      }
+    }
+    fetchTopPlayers()
+    return () => {
+      cancelled = true
+    }
+  }, [season, gateway])
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (
+        !inputRef.current?.contains(e.target as Node) &&
+        !suggestionsRef.current?.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false)
+        setActiveSuggestion(-1)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const trimmedLower = tag.trim().toLowerCase()
+  const suggestions =
+    trimmedLower.length > 0
+      ? topPlayers.filter((t) => t.toLowerCase().includes(trimmedLower)).slice(0, SUGGESTION_LIMIT)
+      : []
+
   const search = useCallback(
     async (newOffset = 0) => {
       const trimmed = tag.trim()
       if (!trimmed) return
+      setShowSuggestions(false)
+      setActiveSuggestion(-1)
       setFetching(true)
       setFetchError(null)
       try {
@@ -112,31 +180,124 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
     [onBuffer],
   )
 
+  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (showSuggestions && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setActiveSuggestion((i) => Math.min(i + 1, suggestions.length - 1))
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setActiveSuggestion((i) => Math.max(i - 1, -1))
+        return
+      }
+      if (e.key === 'Escape') {
+        setShowSuggestions(false)
+        setActiveSuggestion(-1)
+        return
+      }
+      if (e.key === 'Enter' && activeSuggestion >= 0) {
+        e.preventDefault()
+        setTag(suggestions[activeSuggestion])
+        setShowSuggestions(false)
+        setActiveSuggestion(-1)
+        return
+      }
+    }
+    if (e.key === 'Enter') search(0)
+  }
+
   const tagLower = tag.trim().toLowerCase()
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* Search bar */}
-      <div style={{ display: 'flex', gap: '.5rem' }}>
-        <input
-          type="text"
-          value={tag}
-          onChange={(e) => setTag(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && search(0)}
-          placeholder="BattleTag — e.g. Grubby#2759"
-          disabled={fetching || loading}
-          className="font-mono"
-          style={{
-            flex: 1,
-            background: 'var(--surface)',
-            border: '1px solid var(--border-hi)',
-            color: 'var(--text)',
-            padding: '.5rem .75rem',
-            fontSize: '.78rem',
-            letterSpacing: '.03em',
-            outline: 'none',
-          }}
-        />
+      <div style={{ display: 'flex', gap: '.5rem', position: 'relative' }}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <input
+            ref={inputRef}
+            type="text"
+            value={tag}
+            onChange={(e) => {
+              setTag(e.target.value)
+              setShowSuggestions(true)
+              setActiveSuggestion(-1)
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onKeyDown={handleInputKeyDown}
+            placeholder="BattleTag — e.g. Grubby#2759"
+            disabled={fetching || loading}
+            className="font-mono"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              background: 'var(--surface)',
+              border: '1px solid var(--border-hi)',
+              color: 'var(--text)',
+              padding: '.5rem .75rem',
+              fontSize: '.78rem',
+              letterSpacing: '.03em',
+              outline: 'none',
+            }}
+          />
+
+          {/* Autocomplete dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div
+              ref={suggestionsRef}
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                zIndex: 100,
+                background: 'var(--surface)',
+                border: '1px solid var(--border-hi)',
+                borderTop: 'none',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              {suggestions.map((s, i) => {
+                const name = s.split('#')[0]
+                const tag2 = s.split('#')[1]
+                return (
+                  <div
+                    key={s}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      setTag(s)
+                      setShowSuggestions(false)
+                      setActiveSuggestion(-1)
+                      inputRef.current?.focus()
+                    }}
+                    style={{
+                      padding: '.35rem .75rem',
+                      cursor: 'pointer',
+                      background: i === activeSuggestion ? 'var(--bg)' : 'transparent',
+                      borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: '.375rem',
+                    }}
+                    onMouseEnter={() => setActiveSuggestion(i)}
+                    onMouseLeave={() => setActiveSuggestion(-1)}
+                  >
+                    <span style={{ fontSize: '.78rem', color: 'var(--text)' }}>{name}</span>
+                    <span
+                      className="font-mono"
+                      style={{ fontSize: '.65rem', color: 'var(--muted)' }}
+                    >
+                      #{tag2}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
         <button
           className="btn-flat"
           onClick={() => search(0)}

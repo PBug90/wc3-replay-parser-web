@@ -139,6 +139,40 @@ describe('normalizeMapPath', () => {
     expect(normalizeMapPath('(4)TheTwoRivers.w3x')).toBe('thetworiver')
   })
 
+  // ── W3Champions filename convention ─────────────────────────────────────
+
+  it('strips W3C 1v1_ prefix', () => {
+    expect(normalizeMapPath('1v1_EchoIsles_v2.2_w3c_260125_1357_1051.w3x')).toBe('echoisle')
+  })
+
+  it('strips W3C 2v2_ prefix', () => {
+    expect(normalizeMapPath('2v2_TwistedMeadows_w3c_260125_1357_1051.w3x')).toBe('twistedmeadow')
+  })
+
+  it('strips _w3c_ tournament suffix', () => {
+    expect(normalizeMapPath('1v1_Hammerfall_w3c_260125_1357_1051.w3x')).toBe('hammerfall')
+  })
+
+  it('strips _vX.Y version suffix before _w3c_', () => {
+    expect(normalizeMapPath('maps\\W3Champions\\1v1_EchoIsles_v2.2_w3c_260125_1357_1051.w3x')).toBe(
+      'echoisle',
+    )
+  })
+
+  it('strips W3C prefix and LV suffix together', () => {
+    expect(normalizeMapPath('2v2_AvalancheLV_w3c_260125_1357_1051.w3x')).toBe('avalanche')
+  })
+
+  it('handles W3C format with map name after _w3c_ prefix', () => {
+    expect(normalizeMapPath('12_w3c_251104_0950_TurtleRock_v2.0.w3x')).toBe('turtlerock')
+  })
+
+  it('handles W3C format with map name after _w3c_ prefix (full path)', () => {
+    expect(normalizeMapPath('maps\\W3Champions\\12_w3c_251104_0950_TurtleRock_v2.0.w3x')).toBe(
+      'turtlerock',
+    )
+  })
+
   // ── Edge cases ───────────────────────────────────────────────────────────
 
   it('returns an empty string for an empty input', () => {

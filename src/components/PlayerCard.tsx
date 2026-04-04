@@ -7,6 +7,7 @@ import {
   unitLabel,
   upgradeLabel,
   abilityLabel,
+  buildingLabel,
   formatGameTime,
 } from '../format'
 
@@ -21,9 +22,16 @@ export default function PlayerCard({ player }: { player: Player }) {
   const heroes = player.heroes ?? []
   const unitSummary: Record<string, number> = player.units?.summary ?? {}
   const upgradeSummary: Record<string, number> = player.upgrades?.summary ?? {}
+  const buildOrder: { id: string; ms: number }[] = player.buildings?.order ?? []
+
+  const buildingSummary: Record<string, number> = {}
+  for (const { id } of buildOrder) {
+    buildingSummary[id] = (buildingSummary[id] ?? 0) + 1
+  }
 
   const sortedUnits = Object.entries(unitSummary).sort(([, a], [, b]) => b - a)
   const sortedUpgrades = Object.entries(upgradeSummary).sort(([, a], [, b]) => b - a)
+  const sortedBuildings = Object.entries(buildingSummary).sort(([, a], [, b]) => b - a)
 
   return (
     <div
@@ -269,6 +277,67 @@ export default function PlayerCard({ player }: { player: Player }) {
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Buildings built */}
+        {sortedBuildings.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+            <span className="section-label">Buildings built</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.375rem' }}>
+              {sortedBuildings.map(([id, count]) => (
+                <span
+                  key={id}
+                  style={{
+                    fontSize: '.7rem',
+                    padding: '.25rem .5rem',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '.375rem',
+                  }}
+                >
+                  {buildingLabel(id)}
+                  <span style={{ color: 'var(--muted)' }}>×{count}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Build Order */}
+        {buildOrder.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+            <span className="section-label">Build order</span>
+            <ol
+              style={{
+                listStyle: 'none',
+                margin: 0,
+                padding: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '.2rem',
+              }}
+            >
+              {buildOrder.map((entry, i) => (
+                <li
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '.625rem',
+                    fontSize: '.7rem',
+                  }}
+                >
+                  <span className="font-mono" style={{ color: 'var(--muted)', flexShrink: 0 }}>
+                    {formatGameTime(entry.ms)}
+                  </span>
+                  <span style={{ color: 'var(--text)' }}>{buildingLabel(entry.id)}</span>
+                </li>
+              ))}
+            </ol>
           </div>
         )}
       </div>
