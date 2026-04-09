@@ -48,14 +48,16 @@ export function collectRows(players: Player[]): TimingRow[] {
   const rows: TimingRow[] = []
 
   for (const player of players) {
+    const buildingSeen: Record<string, number> = {}
     for (const b of player.buildings?.order ?? []) {
       if (!KEY_BUILDINGS.has(b.id)) continue
+      buildingSeen[b.id] = (buildingSeen[b.id] ?? 0) + 1
       rows.push({
         ms: b.ms,
         player,
         id: b.id,
         label: BUILDING_NAMES[b.id] ?? b.id,
-        detail: '',
+        detail: String(buildingSeen[b.id]),
         kind: 'building',
       })
     }
@@ -76,6 +78,11 @@ export function collectRows(players: Player[]): TimingRow[] {
         rows.push({ ms: u.ms, player, id: u.id, label: name, detail: '', kind: 'upgrade' })
       }
     }
+  }
+
+  // Always suffix buildings with #N so compare keys are stable across replays
+  for (const row of rows) {
+    if (row.kind === 'building') row.detail = `#${row.detail}`
   }
 
   return rows.sort((a, b) => a.ms - b.ms)
