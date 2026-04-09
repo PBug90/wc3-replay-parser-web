@@ -45,40 +45,65 @@ export default function DropZone({ loading, fileName, onFile, onUrl }: DropZoneP
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        style={{ padding: '3.5rem 2rem' }}
+        style={{ padding: '4rem 2rem' }}
       >
-        <div className="flex flex-col items-center gap-3 pointer-events-none select-none">
-          {/* Upload icon */}
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="square"
-            strokeLinejoin="miter"
-            style={{ color: 'var(--muted)', opacity: loading ? 0.4 : 1 }}
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
+        <div className="flex flex-col items-center gap-4 pointer-events-none select-none">
+          {/* Scroll icon */}
+          {loading ? (
+            <svg
+              width="36"
+              height="36"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--gold)"
+              strokeWidth="1"
+              strokeLinecap="round"
+              style={{ opacity: 0.7 }}
+            >
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10" />
+              <path d="M12 6v6l4 2" />
+            </svg>
+          ) : (
+            <svg
+              width="36"
+              height="36"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--gold)"
+              strokeWidth="1"
+              strokeLinecap="round"
+              style={{ opacity: dragging ? 1 : 0.5 }}
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="12" y1="18" x2="12" y2="12" />
+              <polyline points="9 15 12 12 15 15" />
+            </svg>
+          )}
 
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-2">
             <span
-              className="font-display"
+              className={`font-display ${loading ? 'parsing-text' : ''}`}
               style={{
-                fontSize: '1.05rem',
-                fontWeight: 500,
-                letterSpacing: '.06em',
-                color: loading ? 'var(--muted)' : 'var(--text)',
+                fontSize: '.85rem',
+                letterSpacing: '.2em',
+                color: loading ? undefined : dragging ? 'var(--gold)' : 'var(--text)',
+                fontWeight: 600,
               }}
             >
-              {loading ? `PARSING ${(fileName ?? '').toUpperCase()}…` : 'DROP REPLAY FILE'}
+              {loading
+                ? `Deciphering ${(fileName ?? '').toUpperCase()}…`
+                : dragging
+                  ? 'DROP REPLAY HERE'
+                  : 'PLACE YOUR REPLAY HERE'}
             </span>
-            <span style={{ fontSize: '.75rem', color: 'var(--muted)', letterSpacing: '.02em' }}>
-              {loading ? 'Please wait' : '.w3g format · click or drag & drop'}
+            <span
+              className="font-mono text-muted"
+              style={{ fontSize: '.62rem', letterSpacing: '.08em' }}
+            >
+              {loading
+                ? 'The seers are reading the battle record…'
+                : '.w3g · click to browse or drag & drop'}
             </span>
           </div>
         </div>
@@ -94,10 +119,11 @@ export default function DropZone({ loading, fileName, onFile, onUrl }: DropZoneP
 
       {/* Example replays */}
       <div className="flex items-center gap-4">
-        <span className="section-label" style={{ flexShrink: 0 }}>
-          Try an example
-        </span>
-        <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        <span className="section-label shrink-0">Replays</span>
+        <div
+          className="flex-1 h-px"
+          style={{ background: 'linear-gradient(to right, rgba(200,160,80,0.2), transparent)' }}
+        />
         <div className="flex gap-2">
           {EXAMPLE_REPLAYS.map(({ label, url }) => (
             <button key={url} className="btn-flat" disabled={loading} onClick={() => onUrl(url)}>

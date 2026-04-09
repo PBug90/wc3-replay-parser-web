@@ -3,11 +3,13 @@ import { Buffer } from 'buffer'
 import W3GReplay from 'w3gjs'
 import type { ParserOutput } from 'w3gjs/dist/types/types'
 import type { GameDataBlock } from 'w3gjs/dist/types/parsers/GameDataParser'
-import type { PositionedAction } from './Heatmap'
+import type { PositionedAction, PositionedBuilding } from './Heatmap'
+import { BUILDING_NAMES } from './w3g-names'
 
 export interface ReplayParserState {
   replay: ParserOutput | null
   actions: PositionedAction[]
+  buildings: PositionedBuilding[]
   loading: boolean
   error: string | null
   fileName: string | null
@@ -21,6 +23,7 @@ export interface ReplayParserState {
 export function useReplayParser(): ReplayParserState {
   const [replay, setReplay] = useState<ParserOutput | null>(null)
   const [actions, setActions] = useState<PositionedAction[]>([])
+  const [buildings, setBuildings] = useState<PositionedBuilding[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
@@ -38,6 +41,7 @@ export function useReplayParser(): ReplayParserState {
       const parser = new W3GReplay()
 
       const collectedActions: PositionedAction[] = []
+      const collectedBuildings: PositionedBuilding[] = []
       let msElapsed = 0
 
       parser.on('gamedatablock', (block: GameDataBlock) => {
@@ -52,6 +56,23 @@ export function useReplayParser(): ReplayParserState {
                 x: action.target[0],
                 y: action.target[1],
               })
+              // Detect building placement: orderId bytes are stored reversed (little-endian),
+              // matching the objectIdFormatter in w3gjs which does .reverse().join('')
+              if (action.id === 0x11 || action.id === 0x12) {
+                const buildingId = action.orderId
+                  .map((e) => String.fromCharCode(e))
+                  .reverse()
+                  .join('')
+                if (BUILDING_NAMES[buildingId]) {
+                  collectedBuildings.push({
+                    time: msElapsed,
+                    playerId: cmdBlock.playerId,
+                    buildingId,
+                    x: action.target[0],
+                    y: action.target[1],
+                  })
+                }
+              }
             } else if (action.id === 0x14 || action.id === 0x15) {
               collectedActions.push({
                 time: msElapsed,
@@ -67,6 +88,7 @@ export function useReplayParser(): ReplayParserState {
       const result = await parser.parse(buffer as unknown as string)
       setReplay(result)
       setActions(collectedActions)
+      setBuildings(collectedBuildings)
     } catch (e) {
       console.error(e)
       setError(e instanceof Error ? e.message : 'Failed to parse replay file.')
@@ -103,6 +125,7 @@ export function useReplayParser(): ReplayParserState {
   const reset = useCallback(() => {
     setReplay(null)
     setActions([])
+    setBuildings([])
     setError(null)
     setFileName(null)
     setInputReplayBuffer(null)
@@ -111,6 +134,7 @@ export function useReplayParser(): ReplayParserState {
   return {
     replay,
     actions,
+    buildings,
     loading,
     error,
     fileName,

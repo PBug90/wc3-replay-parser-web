@@ -1,18 +1,73 @@
+/* ── Self-hosted fonts ────────────────────────────────────── */
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./assets/fonts/cinzel-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./assets/fonts/cinzel-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('./assets/fonts/jetbrains-mono-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('./assets/fonts/jetbrains-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens ────────────────────────────────────────── */
 :root {
-  --bg: #0b0b0e;
-  --surface: #111116;
-  --border: #1e1e26;
-  --border-hi: #2e2e3a;
-  --text: #ededee;
-  --muted: #46464f;
-  --accent: #f0c040;
-  --accent-lo: rgba(240, 192, 64, 0.12);
+  --bg: #0c1220;
+  --surface: #111d36;
+  --surface-hi: #182848;
+  --border: #2a4070;
+  --border-hi: #4a70c0;
+  --text: #f0e0a8;
+  --muted: #6888b8;
+  --accent: #f0c030;
+  --accent-lo: rgba(240, 192, 48, 0.08);
+  --gold: #f0c030;
+  --gold-hi: #ffe060;
+  --gold-lo: rgba(240, 192, 48, 0.08);
+  --gold-glow: rgba(240, 192, 48, 0.4);
+  --red: #e04040;
+  --teal: #40b0c0;
+  --blue-glow: rgba(74, 112, 192, 0.4);
 }
 
+/* ── Reset & base ─────────────────────────────────────────── */
 * {
   box-sizing: border-box;
 }
@@ -21,112 +76,421 @@ html,
 body,
 #root {
   height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Outfit', sans-serif;
-  -webkit-font-smoothing: antialiased;
 }
 
-/* ── Typography shortcuts ─────────────────────────────── */
-.font-display {
-  font-family: 'Oswald', sans-serif;
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* ── Atmospheric background ───────────────────────────────── */
+#root {
+  position: relative;
+}
+
+#root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 70% at 15% 0%, rgba(40, 60, 140, 0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 85% 100%, rgba(30, 20, 80, 0.5) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(20, 40, 100, 0.25) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Grain noise overlay */
+#root::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content sits above atmospheric effects */
+#root > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Typography ───────────────────────────────────────────── */
+.font-display {
+  font-family: 'Cinzel', serif;
+}
+
+.font-cinzel-deco {
+  font-family: 'Cinzel', serif;
+}
+
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* ── Drop zone ────────────────────────────────────────── */
-.drop-zone {
-  border: 1px dashed var(--border-hi);
-  background: transparent;
-  transition:
-    border-color 0.15s,
-    background 0.15s;
-  cursor: pointer;
-}
-.drop-zone:hover,
-.drop-zone.dragging {
-  border-color: var(--accent);
-  background: var(--accent-lo);
-}
-.drop-zone.dragging {
-  border-style: solid;
+/* ── Panel ────────────────────────────────────────────────── */
+.panel {
+  background: var(--surface);
+  border: 2px solid var(--border-hi);
+  position: relative;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(74, 112, 192, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background-image:
+    linear-gradient(to right, var(--gold), var(--gold)) top left / 16px 2px no-repeat,
+    linear-gradient(to bottom, var(--gold), var(--gold)) top left / 2px 16px no-repeat,
+    linear-gradient(to left, var(--gold), var(--gold)) top right / 16px 2px no-repeat,
+    linear-gradient(to bottom, var(--gold), var(--gold)) top right / 2px 16px no-repeat,
+    linear-gradient(to right, var(--gold), var(--gold)) bottom left / 16px 2px no-repeat,
+    linear-gradient(to top, var(--gold), var(--gold)) bottom left / 2px 16px no-repeat,
+    linear-gradient(to left, var(--gold), var(--gold)) bottom right / 16px 2px no-repeat,
+    linear-gradient(to top, var(--gold), var(--gold)) bottom right / 2px 16px no-repeat,
+    linear-gradient(to bottom, var(--surface-hi), var(--surface));
 }
 
-/* ── Flat button ──────────────────────────────────────── */
+.panel-gold {
+  border: 2px solid rgba(240, 192, 48, 0.6);
+  background-image:
+    linear-gradient(to right, var(--gold-hi), var(--gold-hi)) top left / 20px 2px no-repeat,
+    linear-gradient(to bottom, var(--gold-hi), var(--gold-hi)) top left / 2px 20px no-repeat,
+    linear-gradient(to left, var(--gold-hi), var(--gold-hi)) top right / 20px 2px no-repeat,
+    linear-gradient(to bottom, var(--gold-hi), var(--gold-hi)) top right / 2px 20px no-repeat,
+    linear-gradient(to right, var(--gold-hi), var(--gold-hi)) bottom left / 20px 2px no-repeat,
+    linear-gradient(to top, var(--gold-hi), var(--gold-hi)) bottom left / 2px 20px no-repeat,
+    linear-gradient(to left, var(--gold-hi), var(--gold-hi)) bottom right / 20px 2px no-repeat,
+    linear-gradient(to top, var(--gold-hi), var(--gold-hi)) bottom right / 2px 20px no-repeat,
+    linear-gradient(to bottom, rgba(240, 192, 48, 0.1), var(--surface));
+  box-shadow:
+    0 6px 32px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(240, 192, 48, 0.12),
+    inset 0 0 40px rgba(240, 192, 48, 0.04);
+}
+
+/* ── Section label ────────────────────────────────────────── */
+.section-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(240, 192, 48, 0.5);
+}
+
+/* ── Divider ──────────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 2px solid var(--border);
+}
+
+/* ── Drop zone ────────────────────────────────────────────── */
+.drop-zone {
+  border: 2px solid var(--border-hi);
+  background: linear-gradient(to bottom, var(--surface-hi), var(--surface));
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
+  cursor: pointer;
+  position: relative;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background-image:
+    linear-gradient(to right, var(--gold), var(--gold)) top left / 24px 2px no-repeat,
+    linear-gradient(to bottom, var(--gold), var(--gold)) top left / 2px 24px no-repeat,
+    linear-gradient(to left, var(--gold), var(--gold)) top right / 24px 2px no-repeat,
+    linear-gradient(to bottom, var(--gold), var(--gold)) top right / 2px 24px no-repeat,
+    linear-gradient(to right, var(--gold), var(--gold)) bottom left / 24px 2px no-repeat,
+    linear-gradient(to top, var(--gold), var(--gold)) bottom left / 2px 24px no-repeat,
+    linear-gradient(to left, var(--gold), var(--gold)) bottom right / 24px 2px no-repeat,
+    linear-gradient(to top, var(--gold), var(--gold)) bottom right / 2px 24px no-repeat,
+    linear-gradient(to bottom, var(--surface-hi), var(--surface));
+}
+
+.drop-zone:hover,
+.drop-zone.dragging {
+  border-color: rgba(240, 192, 48, 0.7);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(240, 192, 48, 0.15),
+    inset 0 0 40px rgba(240, 192, 48, 0.06);
+  background-image:
+    linear-gradient(to right, var(--gold-hi), var(--gold-hi)) top left / 24px 2px no-repeat,
+    linear-gradient(to bottom, var(--gold-hi), var(--gold-hi)) top left / 2px 24px no-repeat,
+    linear-gradient(to left, var(--gold-hi), var(--gold-hi)) top right / 24px 2px no-repeat,
+    linear-gradient(to bottom, var(--gold-hi), var(--gold-hi)) top right / 2px 24px no-repeat,
+    linear-gradient(to right, var(--gold-hi), var(--gold-hi)) bottom left / 24px 2px no-repeat,
+    linear-gradient(to top, var(--gold-hi), var(--gold-hi)) bottom left / 2px 24px no-repeat,
+    linear-gradient(to left, var(--gold-hi), var(--gold-hi)) bottom right / 24px 2px no-repeat,
+    linear-gradient(to top, var(--gold-hi), var(--gold-hi)) bottom right / 2px 24px no-repeat,
+    linear-gradient(to bottom, rgba(240, 192, 48, 0.07), var(--surface));
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
 .btn-flat {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  padding: 0.375rem 0.875rem;
-  background: transparent;
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  border: 2px solid var(--border-hi);
+  padding: 0.5rem 1.1rem;
+  background: linear-gradient(to bottom, var(--surface-hi), var(--surface));
   cursor: pointer;
   transition:
-    color 0.12s,
-    border-color 0.12s;
+    color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s,
+    transform 0.1s;
   line-height: 1;
   white-space: nowrap;
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(74, 112, 192, 0.2);
 }
+
 .btn-flat:hover:not(:disabled) {
-  color: var(--text);
-  border-color: var(--border-hi);
+  color: var(--gold);
+  border-color: rgba(240, 192, 48, 0.7);
+  background: linear-gradient(to bottom, rgba(240, 192, 48, 0.12), rgba(240, 192, 48, 0.06));
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.5),
+    0 0 16px rgba(240, 192, 48, 0.2);
+  transform: translateY(-1px);
 }
+
+.btn-flat:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
 .btn-flat:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
-/* ── Accent button ────────────────────────────────────── */
 .btn-accent {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: var(--bg);
-  background: var(--accent);
-  border: 1px solid var(--accent);
-  padding: 0.375rem 1rem;
-  cursor: pointer;
-  transition: opacity 0.12s;
-  line-height: 1;
-}
-.btn-accent:hover {
-  opacity: 0.85;
-}
-
-/* ── Section label ────────────────────────────────────── */
-.section-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: #0c1220;
+  background: linear-gradient(to bottom, var(--gold-hi), var(--gold));
+  border: 2px solid var(--gold-hi);
+  padding: 0.5rem 1.2rem;
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s,
+    background 0.15s,
+    transform 0.1s;
+  line-height: 1;
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(240, 192, 48, 0.3);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-/* ── Divider ──────────────────────────────────────────── */
-.divider {
+.btn-accent:hover {
+  background: linear-gradient(to bottom, #fff080, var(--gold-hi));
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.5),
+    0 0 24px var(--gold-glow);
+  transform: translateY(-1px);
+}
+
+.btn-accent:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* ── Tab bar ──────────────────────────────────────────────── */
+.wc3-tab {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: transparent;
   border: none;
-  border-top: 1px solid var(--border);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    box-shadow 0.15s,
+    text-shadow 0.15s;
+  line-height: 1;
+  padding: 0.8rem 1.6rem;
+  margin-bottom: -1px;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
 }
 
-/* ── Fade-in utility ──────────────────────────────────── */
+.wc3-tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+  text-shadow:
+    0 0 12px var(--gold-glow),
+    0 0 24px rgba(240, 192, 48, 0.2);
+}
+
+.wc3-tab:hover:not(.active) {
+  color: var(--text);
+  text-shadow: 0 0 8px rgba(240, 220, 180, 0.2);
+}
+
+/* ── Input / Select ───────────────────────────────────────── */
+input[type='text'],
+input[type='number'],
+select {
+  background: var(--surface);
+  border: 2px solid var(--border-hi);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+input[type='text']:focus,
+input[type='number']:focus,
+select:focus {
+  border-color: rgba(240, 192, 48, 0.6);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 0 2px rgba(240, 192, 48, 0.15);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-hi);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* ── Title glow animation ─────────────────────────────────── */
+@keyframes goldPulse {
+  0%,
+  100% {
+    text-shadow:
+      0 0 20px rgba(240, 192, 48, 0.5),
+      0 0 50px rgba(240, 192, 48, 0.2),
+      0 2px 4px rgba(0, 0, 0, 0.8);
+  }
+  50% {
+    text-shadow:
+      0 0 30px rgba(240, 192, 48, 0.8),
+      0 0 70px rgba(240, 192, 48, 0.35),
+      0 0 120px rgba(240, 192, 48, 0.15),
+      0 2px 4px rgba(0, 0, 0, 0.8);
+  }
+}
+
+.title-glow {
+  animation: goldPulse 4s ease-in-out infinite;
+  color: var(--gold);
+}
+
+/* ── Rune divider ─────────────────────────────────────────── */
+.rune-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--gold);
+}
+
+.rune-divider::before,
+.rune-divider::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(to var(--dir, right), transparent, rgba(240, 192, 48, 0.5));
+}
+
+.rune-divider::after {
+  --dir: left;
+}
+
+/* ── Parsing shimmer ──────────────────────────────────────── */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.parsing-text {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    var(--gold) 40%,
+    var(--gold-hi) 50%,
+    var(--gold) 60%,
+    var(--muted) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ── Table rows ───────────────────────────────────────────── */
+.wc3-table tbody tr:hover {
+  background: rgba(74, 112, 192, 0.08);
+}
+
+/* ── Magic poof click particles ──────────────────────────── */
+@keyframes magic-poof {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.2);
+  }
+}
+
+/* ── Fade in ──────────────────────────────────────────────── */
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 .fade-up {
-  animation: fadeUp 0.3s ease both;
+  animation: fadeUp 0.4s ease both;
 }
 
+/* ── Steam (coffee ribbon) ────────────────────────────────── */
 @keyframes steam {
   0% {
     opacity: 0;
@@ -140,20 +504,23 @@ body,
     transform: translateY(-10px) scaleX(1.4);
   }
 }
+
 .steam-wrap {
   position: relative;
   display: inline-block;
 }
+
 .steam {
   position: absolute;
   bottom: 80%;
   width: 2px;
   height: 6px;
   border-radius: 1px;
-  background: #0b0b0e;
+  background: #0c1220;
   opacity: 0;
   animation: steam 1.4s ease-in infinite;
 }
+
 .steam:nth-child(1) {
   left: 28%;
   animation-delay: 0s;
@@ -165,4 +532,16 @@ body,
 .steam:nth-child(3) {
   left: 72%;
   animation-delay: 0.9s;
+}
+
+/* ── Race badge ───────────────────────────────────────────── */
+.race-badge {
+  font-family: 'Cinzel', serif;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 2px solid currentColor;
+  opacity: 0.85;
 }

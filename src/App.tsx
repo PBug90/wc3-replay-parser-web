@@ -4,13 +4,22 @@ import { useReplayParser } from './useReplayParser'
 import DropZone from './components/DropZone'
 import ReplayView from './components/ReplayView'
 import W3CMatchBrowser from './components/W3CMatchBrowser'
+import CompareView from './components/CompareView'
+import MagicPoof from './components/MagicPoof'
 
-type Tab = 'upload' | 'w3c'
+type Tab = 'upload' | 'w3c' | 'compare'
+
+const TAB_LABELS: Record<Tab, string> = {
+  upload: 'Load Replay',
+  w3c: 'W3Champions',
+  compare: 'Replay Comparison',
+}
 
 export default function App() {
   const {
     replay,
     actions,
+    buildings,
     loading,
     error,
     fileName,
@@ -20,42 +29,39 @@ export default function App() {
     parseBuffer,
     reset,
   } = useReplayParser()
+
+  const parserA = useReplayParser()
+  const parserB = useReplayParser()
+
   const [tab, setTab] = useState<Tab>('upload')
 
-  const showResults = replay && !loading
+  const showSingleResults = !!(replay && !loading && tab !== 'compare')
+  const showCompareResults = !!(
+    parserA.replay &&
+    !parserA.loading &&
+    parserB.replay &&
+    !parserB.loading
+  )
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--bg)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
+    <div className="min-h-screen bg-bg">
+      <MagicPoof />
       {/* ── Corner ribbon ───────────────────────────────── */}
       <a
         href="https://www.buymeacoffee.com/PBug90"
         target="_blank"
         rel="noreferrer"
+        className="font-display fixed block text-center no-underline bg-gold text-bg z-[100]"
         style={{
-          position: 'fixed',
           top: 52,
           right: -68,
           width: 260,
           transform: 'rotate(45deg)',
-          background: 'var(--accent)',
-          textAlign: 'center',
-          zIndex: 100,
-          boxShadow: '0 2px 12px rgba(0,0,0,.5)',
           padding: '9px 0',
-          display: 'block',
-          textDecoration: 'none',
-          fontFamily: "'Outfit', sans-serif",
-          fontSize: '.72rem',
-          fontWeight: 600,
-          letterSpacing: '.06em',
-          color: '#0b0b0e',
+          fontSize: '.55rem',
+          fontWeight: 700,
+          letterSpacing: '.18em',
+          boxShadow: '0 2px 20px rgba(0,0,0,0.8)',
         }}
       >
         <span className="steam-wrap">
@@ -66,80 +72,95 @@ export default function App() {
         </span>{' '}
         BUY ME A COFFEE
       </a>
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: '4rem 2rem 6rem' }}>
+
+      <div className="max-w-[1400px] mx-auto px-12 pt-16 pb-24">
         {/* ── Header ──────────────────────────────────────── */}
-        <header style={{ marginBottom: '3.5rem' }}>
+        <header className="mb-16 text-center">
+          {/* Main title */}
           <h1
-            className="font-display"
+            className="font-cinzel-deco title-glow m-0 leading-none"
+            style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', letterSpacing: '.06em' }}
+          >
+            Warcraft III
+          </h1>
+          <p
+            className="font-display text-foreground m-0 mt-2"
             style={{
-              fontSize: 'clamp(2.8rem, 7vw, 4.5rem)',
-              fontWeight: 600,
-              letterSpacing: '.04em',
-              lineHeight: 1,
+              fontSize: 'clamp(.9rem, 2vw, 1.3rem)',
+              letterSpacing: '.35em',
               color: 'var(--text)',
-              margin: 0,
+              opacity: 0.6,
             }}
           >
-            Warcraft 3 Replay Parser
-          </h1>
-          <div
-            style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-          >
+            REPLAY PARSER
+          </p>
+
+          {/* Decorative bottom rule */}
+          <div className="flex items-center gap-4 mt-6">
+            <div
+              className="flex-1 h-px"
+              style={{
+                background:
+                  'linear-gradient(to right, transparent, rgba(200,160,80,0.3), transparent)',
+              }}
+            />
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <polygon
+                points="7,0 8.5,5.5 14,7 8.5,8.5 7,14 5.5,8.5 0,7 5.5,5.5"
+                fill="var(--gold)"
+                opacity="0.6"
+              />
+            </svg>
+            <div
+              className="flex-1 h-px"
+              style={{
+                background:
+                  'linear-gradient(to right, transparent, rgba(200,160,80,0.3), transparent)',
+              }}
+            />
+          </div>
+
+          {/* Meta info */}
+          <div className="flex items-center justify-center gap-3 mt-5">
             <a
               href="https://github.com/PBug90/w3gjs"
               target="_blank"
               rel="noreferrer"
-              className="font-mono"
+              className="font-mono no-underline hover:underline"
               style={{
-                fontSize: '.7rem',
-                color: 'var(--accent)',
-                letterSpacing: '.1em',
-                textDecoration: 'none',
+                fontSize: '.62rem',
+                color: 'var(--gold)',
+                opacity: 0.7,
+                letterSpacing: '.08em',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
             >
               w3gjs v{w3gjsPkg.version}
             </a>
-            <span style={{ width: 1, height: 10, background: 'var(--border-hi)' }} />
+            <span className="text-muted" style={{ fontSize: '.5rem' }}>
+              ◆
+            </span>
             <span
-              className="font-mono"
-              style={{ fontSize: '.7rem', color: 'var(--muted)', letterSpacing: '.08em' }}
+              className="font-mono text-muted"
+              style={{ fontSize: '.62rem', letterSpacing: '.06em' }}
             >
-              .w3g file parser — parsed locally in your browser
+              parsed locally in your browser
             </span>
           </div>
         </header>
 
-        {/* ── Upload / W3Champions tabs ────────────────────── */}
-        <div style={{ display: showResults ? 'none' : 'block' }}>
-          {/* Tab bar */}
+        {/* ── Tabs ────────────────────────────────────────── */}
+        <div className={showSingleResults ? 'hidden' : 'block'}>
           <div
-            style={{
-              display: 'flex',
-              borderBottom: '1px solid var(--border)',
-              marginBottom: '1.5rem',
-            }}
+            className="flex justify-center border-b border-border mb-8"
+            style={{ borderBottomColor: 'rgba(200,160,80,0.15)' }}
           >
-            {(['upload', 'w3c'] as Tab[]).map((t) => (
+            {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className="font-mono"
-                style={{
-                  padding: '.5rem 1.25rem',
-                  fontSize: '.7rem',
-                  letterSpacing: '.08em',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: `2px solid ${tab === t ? 'var(--accent)' : 'transparent'}`,
-                  color: tab === t ? 'var(--text)' : 'var(--muted)',
-                  cursor: 'pointer',
-                  marginBottom: -1,
-                  transition: 'color .15s',
-                }}
+                className={`wc3-tab${tab === t ? ' active' : ''}`}
               >
-                {t === 'upload' ? 'UPLOAD FILE' : 'W3CHAMPIONS'}
+                {TAB_LABELS[t]}
               </button>
             ))}
           </div>
@@ -148,41 +169,63 @@ export default function App() {
             <DropZone loading={loading} fileName={fileName} onFile={parseFile} onUrl={parseUrl} />
           )}
           {tab === 'w3c' && <W3CMatchBrowser loading={loading} onBuffer={parseBuffer} />}
+          {tab === 'compare' && !showCompareResults && (
+            <div className="flex gap-6">
+              <div className="flex-1 flex flex-col gap-3">
+                <span className="section-label">First Replay</span>
+                <DropZone
+                  loading={parserA.loading}
+                  fileName={parserA.fileName}
+                  onFile={parserA.parseFile}
+                  onUrl={parserA.parseUrl}
+                />
+                {parserA.error && (
+                  <span className="font-mono text-red-400" style={{ fontSize: '.72rem' }}>
+                    {parserA.error}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 flex flex-col gap-3">
+                <span className="section-label">Second Replay</span>
+                <DropZone
+                  loading={parserB.loading}
+                  fileName={parserB.fileName}
+                  onFile={parserB.parseFile}
+                  onUrl={parserB.parseUrl}
+                />
+                {parserB.error && (
+                  <span className="font-mono text-red-400" style={{ fontSize: '.72rem' }}>
+                    {parserB.error}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ── Error ───────────────────────────────────────── */}
-        {error && (
+        {/* ── Single replay error ──────────────────────────── */}
+        {error && tab !== 'compare' && (
           <div
-            className="font-mono"
+            className="font-mono mt-6 px-4 py-3.5 text-red-400"
             style={{
-              marginTop: '1.5rem',
-              padding: '.875rem 1rem',
-              border: '1px solid #7f1d1d',
-              background: 'rgba(127,29,29,.15)',
-              fontSize: '.75rem',
-              color: '#fca5a5',
-              letterSpacing: '.02em',
+              fontSize: '.72rem',
+              letterSpacing: '.03em',
+              border: '1px solid rgba(184,48,48,0.4)',
+              background: 'rgba(184,48,48,0.08)',
             }}
           >
-            ERROR — {error}
+            ⚠ {error}
           </div>
         )}
 
-        {/* ── Results ─────────────────────────────────────── */}
-        {showResults && (
+        {/* ── Single replay results ────────────────────────── */}
+        {showSingleResults && (
           <div className="fade-up">
-            {/* Parse another */}
-            <div
-              style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}
-            >
-              <button
-                className="btn-flat"
-                onClick={reset}
-                style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}
-              >
+            <div className="mb-10 flex items-center gap-3">
+              <button className="btn-flat flex items-center gap-2" onClick={reset}>
                 <svg
-                  width="12"
-                  height="12"
+                  width="10"
+                  height="10"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -191,12 +234,11 @@ export default function App() {
                 >
                   <path d="M19 12H5M12 5l-7 7 7 7" />
                 </svg>
-                PARSE ANOTHER REPLAY
+                New Replay
               </button>
               {inputReplayBuffer && (
                 <button
-                  className="btn-flat"
-                  style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}
+                  className="btn-flat flex items-center gap-2"
                   onClick={() => {
                     const blob = new Blob([inputReplayBuffer], { type: 'application/octet-stream' })
                     const url = URL.createObjectURL(blob)
@@ -208,8 +250,8 @@ export default function App() {
                   }}
                 >
                   <svg
-                    width="12"
-                    height="12"
+                    width="10"
+                    height="10"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -219,19 +261,72 @@ export default function App() {
                     <path d="M12 5v14M5 12l7 7 7-7" />
                     <path d="M5 19h14" />
                   </svg>
-                  DOWNLOAD REPLAY
+                  Download Replay
                 </button>
               )}
-              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <div
+                className="flex-1 h-px"
+                style={{
+                  background: 'linear-gradient(to right, rgba(200,160,80,0.2), transparent)',
+                }}
+              />
               <span
-                className="font-mono"
-                style={{ fontSize: '.65rem', color: 'var(--muted)', letterSpacing: '.08em' }}
+                className="font-mono text-muted"
+                style={{ fontSize: '.6rem', letterSpacing: '.06em' }}
               >
                 {fileName}
               </span>
             </div>
+            <ReplayView
+              replay={replay}
+              actions={actions}
+              buildings={buildings}
+              fileName={fileName}
+            />
+          </div>
+        )}
 
-            <ReplayView replay={replay} actions={actions} fileName={fileName} />
+        {/* ── Compare results ──────────────────────────────── */}
+        {tab === 'compare' && showCompareResults && (
+          <div className="fade-up flex flex-col gap-8">
+            <div className="flex items-center gap-3">
+              <button
+                className="btn-flat flex items-center gap-2"
+                onClick={() => {
+                  parserA.reset()
+                  parserB.reset()
+                }}
+              >
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="square"
+                >
+                  <path d="M19 12H5M12 5l-7 7 7 7" />
+                </svg>
+                New Comparison
+              </button>
+              <div
+                className="flex-1 h-px"
+                style={{
+                  background: 'linear-gradient(to right, rgba(200,160,80,0.2), transparent)',
+                }}
+              />
+            </div>
+            <CompareView
+              replayA={parserA.replay!}
+              replayB={parserB.replay!}
+              fileNameA={parserA.fileName}
+              fileNameB={parserB.fileName}
+              actionsA={parserA.actions}
+              buildingsA={parserA.buildings}
+              actionsB={parserB.actions}
+              buildingsB={parserB.buildings}
+            />
           </div>
         )}
       </div>

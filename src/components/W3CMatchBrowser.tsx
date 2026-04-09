@@ -72,9 +72,9 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div className="flex flex-col gap-4">
       {/* Search bar */}
-      <div style={{ display: 'flex', gap: '.5rem' }}>
+      <div className="flex gap-2">
         <PlayerSearchInput
           value={tag}
           onChange={setTag}
@@ -92,11 +92,11 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
       </div>
 
       {/* Season + Gateway */}
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+      <div className="flex gap-4 items-center">
+        <div className="flex items-center gap-2">
           <span
-            className="font-mono"
-            style={{ fontSize: '.68rem', color: 'var(--muted)', letterSpacing: '.06em' }}
+            className="font-mono text-muted"
+            style={{ fontSize: '.68rem', letterSpacing: '.06em' }}
           >
             SEASON
           </span>
@@ -105,27 +105,22 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
             value={season}
             min={1}
             onChange={(e) => setSeason(e.target.value)}
-            className="font-mono"
+            className="font-mono bg-surface border border-border-hi text-foreground text-center outline-none"
             style={{
               width: 52,
-              background: 'var(--surface)',
-              border: '1px solid var(--border-hi)',
-              color: 'var(--text)',
               padding: '.3rem .5rem',
               fontSize: '.75rem',
-              textAlign: 'center',
-              outline: 'none',
             }}
           />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+        <div className="flex items-center gap-2">
           <span
-            className="font-mono"
-            style={{ fontSize: '.68rem', color: 'var(--muted)', letterSpacing: '.06em' }}
+            className="font-mono text-muted"
+            style={{ fontSize: '.68rem', letterSpacing: '.06em' }}
           >
             GATEWAY
           </span>
-          <div style={{ display: 'flex', gap: '.35rem' }}>
+          <div className="flex gap-[.35rem]">
             {GATEWAYS.map((gw) => (
               <button
                 key={gw.value}
@@ -147,22 +142,14 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
 
       {/* Error */}
       {fetchError && (
-        <span className="font-mono" style={{ fontSize: '.72rem', color: '#fca5a5' }}>
+        <span className="font-mono text-red-300" style={{ fontSize: '.72rem' }}>
           {fetchError}
         </span>
       )}
 
       {/* Empty hint */}
       {!fetching && !fetchError && matches.length === 0 && (
-        <p
-          style={{
-            fontSize: '.75rem',
-            color: 'var(--muted)',
-            textAlign: 'center',
-            padding: '2rem 0',
-            margin: 0,
-          }}
-        >
+        <p className="text-muted text-center m-0 py-8" style={{ fontSize: '.75rem' }}>
           {lastSearchedTag
             ? `No matches found for ${lastSearchedTag}`
             : 'Enter a BattleTag to browse recent W3Champions matches'}

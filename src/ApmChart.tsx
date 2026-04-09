@@ -114,20 +114,14 @@ export default function ApmChart({ players, trackingInterval }: ApmChartProps) {
       </svg>
 
       {/* Legend */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem' }}>
+      <div className="flex flex-wrap gap-5">
         {active.map((p) => (
           <span
             key={p.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '.5rem',
-              fontSize: '.7rem',
-              color: '#9a9aa8',
-              fontFamily: "'Outfit', sans-serif",
-            }}
+            className="flex items-center gap-2 text-zinc-400"
+            style={{ fontSize: '.7rem', fontFamily: "'Outfit', sans-serif" }}
           >
-            <svg width={16} height={2} style={{ flexShrink: 0 }}>
+            <svg width={16} height={2} className="flex-shrink-0">
               <line x1={0} y1={1} x2={16} y2={1} stroke={p.color} strokeWidth={2} />
             </svg>
             {p.name}

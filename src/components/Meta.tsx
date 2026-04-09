@@ -11,15 +11,10 @@ export default function Meta({
     <div className="flex flex-col gap-1">
       <span className="section-label">{label}</span>
       <span
-        style={{
-          fontSize: '.875rem',
-          color: 'var(--text)',
-          fontWeight: 400,
-          letterSpacing: '.01em',
-          ...(wrap
-            ? { wordBreak: 'break-all' }
-            : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
-        }}
+        className={`text-foreground font-normal text-sm ${
+          wrap ? 'break-all' : 'overflow-hidden text-ellipsis whitespace-nowrap'
+        }`}
+        style={{ letterSpacing: '.01em' }}
         title={value}
       >
         {value}

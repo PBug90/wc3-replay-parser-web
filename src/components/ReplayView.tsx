@@ -1,30 +1,46 @@
 import type { ParserOutput } from 'w3gjs/dist/types/types'
-import type { PositionedAction } from '../Heatmap'
+import type { PositionedAction, PositionedBuilding } from '../Heatmap'
 import Heatmap from '../Heatmap'
 import ApmChart from '../ApmChart'
 import Meta from './Meta'
 import PlayerCard from './PlayerCard'
+import BuildTimeline from './BuildTimeline'
 import { formatDuration } from '../format'
 
 interface ReplayViewProps {
   replay: ParserOutput
   actions: PositionedAction[]
+  buildings: PositionedBuilding[]
   fileName: string | null
 }
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col" style={{ gap: '1.25rem' }}>
+    <div className="flex flex-col gap-5">
+      {/* Rune-style divider */}
       <div className="flex items-center gap-3">
+        <div
+          className="h-px flex-1"
+          style={{ background: 'linear-gradient(to right, transparent, rgba(200,160,80,0.25))' }}
+        />
+        <svg width="6" height="6" viewBox="0 0 6 6">
+          <polygon points="3,0 6,3 3,6 0,3" fill="var(--gold)" opacity="0.6" />
+        </svg>
         <span className="section-label">{label}</span>
-        <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        <svg width="6" height="6" viewBox="0 0 6 6">
+          <polygon points="3,0 6,3 3,6 0,3" fill="var(--gold)" opacity="0.6" />
+        </svg>
+        <div
+          className="h-px flex-1"
+          style={{ background: 'linear-gradient(to left, transparent, rgba(200,160,80,0.25))' }}
+        />
       </div>
       {children}
     </div>
   )
 }
 
-export default function ReplayView({ replay, actions, fileName }: ReplayViewProps) {
+export default function ReplayView({ replay, actions, buildings, fileName }: ReplayViewProps) {
   const players = replay.players ?? []
 
   const teams: Record<number, typeof players> = {}
@@ -46,16 +62,13 @@ export default function ReplayView({ replay, actions, fileName }: ReplayViewProp
     : '—'
 
   return (
-    <div className="flex flex-col" style={{ gap: '3rem' }}>
+    <div className="flex flex-col gap-12">
       {/* Metadata strip */}
       <div
+        className="panel-gold grid p-6"
         style={{
-          display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
           gap: '1.5rem 2rem',
-          padding: '1.5rem',
-          border: '1px solid var(--border)',
-          background: 'var(--surface)',
         }}
       >
         <Meta label="File" value={fileName ?? '—'} />
@@ -67,44 +80,50 @@ export default function ReplayView({ replay, actions, fileName }: ReplayViewProp
         <Meta label="Players" value={String(players.length)} />
       </div>
 
-      {/* Action heatmap */}
+      {/* Action heatmap + key timings side by side */}
       {actions.length > 0 && (
-        <Section label="Action Map">
-          <Heatmap
-            actions={actions}
-            mapFile={mapFile}
-            playerIdColorMap={playerIdColorMap}
-            width={500}
-            height={500}
-          />
+        <Section label="Battle Map">
+          <div className="flex gap-6 items-start">
+            <Heatmap
+              actions={actions}
+              buildings={buildings}
+              mapFile={mapFile}
+              playerIdColorMap={playerIdColorMap}
+              width={500}
+              height={500}
+            />
+            {players.length > 0 && (
+              <div className="flex flex-col gap-3 flex-1 min-w-0">
+                <span className="section-label">Key Timings</span>
+                <BuildTimeline players={players} />
+              </div>
+            )}
+          </div>
         </Section>
       )}
 
       {/* APM chart */}
       {players.some((p) => p.actions?.timed?.length > 0) && (
-        <Section label="APM Over Time">
+        <Section label="Actions Per Minute">
           <ApmChart players={players} trackingInterval={replay.apm.trackingInterval} />
         </Section>
       )}
 
       {/* Teams */}
       {Object.keys(teams).length > 0 && (
-        <Section label="Players">
-          <div className="flex flex-col" style={{ gap: '2rem' }}>
+        <Section label="Heroes & Forces">
+          <div className="flex flex-col gap-8">
             {Object.entries(teams).map(([teamId, teamPlayers]) => (
-              <div key={teamId} className="flex flex-col" style={{ gap: '.75rem' }}>
+              <div key={teamId} className="flex flex-col gap-3">
                 <span
-                  className="font-mono"
-                  style={{ fontSize: '.65rem', color: 'var(--muted)', letterSpacing: '.1em' }}
+                  className="font-display text-muted"
+                  style={{ fontSize: '.55rem', letterSpacing: '.25em' }}
                 >
-                  TEAM {Number(teamId) + 1}
+                  ── TEAM {Number(teamId) + 1} ──
                 </span>
                 <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-                    gap: '1rem',
-                  }}
+                  className="grid gap-4"
+                  style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}
                 >
                   {teamPlayers.map((player) => (
                     <PlayerCard key={player.id ?? player.name} player={player} />
@@ -120,28 +139,17 @@ export default function ReplayView({ replay, actions, fileName }: ReplayViewProp
       <Section label="Raw Data">
         <details>
           <summary
-            style={{
-              cursor: 'pointer',
-              fontSize: '.75rem',
-              color: 'var(--muted)',
-              letterSpacing: '.04em',
-              userSelect: 'none',
-            }}
+            className="cursor-pointer text-muted select-none font-display"
+            style={{ fontSize: '.6rem', letterSpacing: '.12em' }}
           >
-            Show JSON
+            Reveal Replay Contents
           </summary>
           <pre
+            className="mt-3 p-4 text-muted bg-surface overflow-x-auto max-h-96 font-mono leading-relaxed"
             style={{
-              marginTop: '.75rem',
-              padding: '1rem',
-              fontSize: '.7rem',
-              color: 'var(--muted)',
-              background: 'var(--surface)',
+              fontSize: '.65rem',
               border: '1px solid var(--border)',
-              overflowX: 'auto',
-              maxHeight: '24rem',
-              fontFamily: "'JetBrains Mono', monospace",
-              lineHeight: 1.6,
+              borderTop: '1px solid rgba(200,160,80,0.15)',
             }}
           >
             {JSON.stringify(replay, null, 2)}

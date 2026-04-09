@@ -2,7 +2,6 @@ import type { ParserOutput } from 'w3gjs/dist/types/types'
 import {
   getRaceLabel,
   heroDisplayName,
-  heroInitials,
   heroIconBg,
   unitLabel,
   upgradeLabel,
@@ -10,6 +9,8 @@ import {
   buildingLabel,
   formatGameTime,
 } from '../format'
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
 
 type Player = ParserOutput['players'][number]
 
@@ -35,55 +36,41 @@ export default function PlayerCard({ player }: { player: Player }) {
 
   return (
     <div
+      className="overflow-hidden"
       style={{
-        border: '1px solid var(--border)',
-        borderLeft: `3px solid ${colorHex}`,
         background: 'var(--surface)',
-        overflow: 'hidden',
+        border: '2px solid var(--border-hi)',
+        borderLeft: `4px solid ${colorHex}`,
+        boxShadow: `0 4px 20px rgba(0,0,0,0.5), 4px 0 0 ${colorHex}22`,
+        /* Corner brackets in player color */
+        backgroundImage: `
+          linear-gradient(to right, ${colorHex}44, ${colorHex}44) top right / 10px 1px no-repeat,
+          linear-gradient(to bottom, ${colorHex}44, ${colorHex}44) top right / 1px 10px no-repeat,
+          linear-gradient(to bottom, var(--surface-hi), var(--surface))
+        `,
       }}
     >
       {/* Header */}
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.625rem',
-          padding: '.75rem 1rem',
-          borderBottom: '1px solid var(--border)',
-        }}
+        className="flex items-center gap-2.5 px-4 py-3"
+        style={{ borderBottom: '1px solid var(--border)' }}
       >
         <span
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: '50%',
-            flexShrink: 0,
-            background: colorHex,
-          }}
+          className="rounded-full flex-shrink-0"
+          style={{ width: 8, height: 8, background: colorHex, boxShadow: `0 0 6px ${colorHex}88` }}
         />
         <span
-          style={{
-            fontSize: '.875rem',
-            fontWeight: 500,
-            color: 'var(--text)',
-            flex: 1,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+          className="font-display text-foreground flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+          style={{ fontSize: '.85rem', letterSpacing: '.04em' }}
         >
           {name}
         </span>
-        <div style={{ display: 'flex', gap: '1rem', flexShrink: 0 }}>
-          {race && (
-            <span style={{ fontSize: '.7rem', color: 'var(--muted)', letterSpacing: '.04em' }}>
-              {getRaceLabel(race).toUpperCase()}
-            </span>
-          )}
+        <div className="flex gap-3 flex-shrink-0 items-center">
+          {race && <span className="race-badge text-muted">{getRaceLabel(race)}</span>}
           {apm > 0 && (
             <span
               className="font-mono"
-              style={{ fontSize: '.7rem', color: 'var(--accent)', letterSpacing: '.04em' }}
+              style={{ fontSize: '.65rem', color: 'var(--gold)', letterSpacing: '.04em' }}
             >
               {apm} APM
             </span>
@@ -91,99 +78,64 @@ export default function PlayerCard({ player }: { player: Player }) {
         </div>
       </div>
 
-      <div
-        style={{ padding: '.875rem 1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
-      >
+      <div className="px-4 py-3.5 flex flex-col gap-4">
         {/* Heroes */}
         {heroes.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.875rem' }}>
+          <div className="flex flex-col gap-3.5">
             {heroes.map((hero, i: number) => {
               const id: string = hero.id ?? ''
               const level: number = hero.level ?? 0
               const abilities: Record<string, number> = hero.abilities ?? {}
               return (
-                <div key={i} style={{ display: 'flex', gap: '.75rem' }}>
+                <div key={i} className="flex gap-3">
                   {/* Hero icon */}
                   <div
-                    style={{
-                      flexShrink: 0,
-                      width: 36,
-                      height: 36,
-                      background: heroIconBg(id),
-                      border: '1px solid var(--border)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontFamily: "'Oswald', sans-serif",
-                      fontSize: '.7rem',
-                      fontWeight: 500,
-                      color: 'var(--text)',
-                      letterSpacing: '.04em',
-                    }}
+                    className="flex-shrink-0 border border-border overflow-hidden"
+                    style={{ width: 36, height: 36, background: heroIconBg(id) }}
                     title={heroDisplayName(id)}
                   >
-                    {heroInitials(id)}
+                    <img
+                      src={`${BASE}/heroes/${id}.png`}
+                      alt={heroDisplayName(id)}
+                      width={36}
+                      height={36}
+                      style={{ display: 'block', imageRendering: 'pixelated' }}
+                      onError={(e) => {
+                        // Fallback: hide broken img, show background color only
+                        ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+                      }}
+                    />
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '.5rem' }}>
-                      <span style={{ fontSize: '.8rem', fontWeight: 500, color: 'var(--text)' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-medium text-foreground" style={{ fontSize: '.8rem' }}>
                         {heroDisplayName(id)}
                       </span>
                       {level > 0 && (
-                        <span
-                          className="font-mono"
-                          style={{ fontSize: '.65rem', color: 'var(--muted)' }}
-                        >
+                        <span className="font-mono text-muted" style={{ fontSize: '.65rem' }}>
                           lv {level}
                         </span>
                       )}
                     </div>
                     {/* Retraining */}
                     {hero.retrainingHistory?.map((entry, ri: number) => (
-                      <div
-                        key={ri}
-                        style={{
-                          marginTop: '.5rem',
-                          paddingLeft: '.625rem',
-                          borderLeft: '1px solid var(--border)',
-                        }}
-                      >
+                      <div key={ri} className="mt-2 pl-2.5 border-l border-border">
                         <p
-                          style={{
-                            fontSize: '.65rem',
-                            color: 'var(--muted)',
-                            marginBottom: '.25rem',
-                            letterSpacing: '.03em',
-                          }}
+                          className="text-muted mb-1"
+                          style={{ fontSize: '.65rem', letterSpacing: '.03em' }}
                         >
                           Tome of Retraining · {formatGameTime(entry.time)}
                         </p>
-                        <ul
-                          style={{
-                            listStyle: 'none',
-                            margin: 0,
-                            padding: 0,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '.2rem',
-                          }}
-                        >
+                        <ul className="list-none m-0 p-0 flex flex-col gap-[.2rem]">
                           {Object.entries(entry.abilities as Record<string, number>).map(
                             ([abilId, lvl]) => (
                               <li
                                 key={abilId}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '.5rem',
-                                  fontSize: '.7rem',
-                                  color: 'var(--muted)',
-                                }}
+                                className="flex items-center gap-2 text-muted"
+                                style={{ fontSize: '.7rem' }}
                               >
                                 <AbilityDots level={lvl} faded />
-                                <span style={{ textDecoration: 'line-through' }}>
-                                  {abilityLabel(abilId)}
-                                </span>
+                                <span className="line-through">{abilityLabel(abilId)}</span>
                               </li>
                             ),
                           )}
@@ -192,26 +144,12 @@ export default function PlayerCard({ player }: { player: Player }) {
                     ))}
                     {/* Abilities */}
                     {Object.keys(abilities).length > 0 && (
-                      <ul
-                        style={{
-                          listStyle: 'none',
-                          margin: '.375rem 0 0',
-                          padding: 0,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '.2rem',
-                        }}
-                      >
+                      <ul className="list-none mt-1.5 mb-0 p-0 flex flex-col gap-[.2rem]">
                         {Object.entries(abilities).map(([abilId, lvl]) => (
                           <li
                             key={abilId}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '.5rem',
-                              fontSize: '.7rem',
-                              color: '#9a9aa8',
-                            }}
+                            className="flex items-center gap-2 text-zinc-400"
+                            style={{ fontSize: '.7rem' }}
                           >
                             <AbilityDots level={lvl} />
                             <span>{abilityLabel(abilId)}</span>
@@ -228,25 +166,17 @@ export default function PlayerCard({ player }: { player: Player }) {
 
         {/* Units */}
         {sortedUnits.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+          <div className="flex flex-col gap-2">
             <span className="section-label">Units trained</span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.375rem' }}>
+            <div className="flex flex-wrap gap-1.5">
               {sortedUnits.map(([id, count]) => (
                 <span
                   key={id}
-                  style={{
-                    fontSize: '.7rem',
-                    padding: '.25rem .5rem',
-                    background: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '.375rem',
-                  }}
+                  className="flex items-center gap-1.5 px-2 py-1 bg-bg border border-border text-foreground"
+                  style={{ fontSize: '.7rem' }}
                 >
                   {unitLabel(id)}
-                  <span style={{ color: 'var(--muted)' }}>×{count}</span>
+                  <span className="text-muted">×{count}</span>
                 </span>
               ))}
             </div>
@@ -255,25 +185,17 @@ export default function PlayerCard({ player }: { player: Player }) {
 
         {/* Upgrades */}
         {sortedUpgrades.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+          <div className="flex flex-col gap-2">
             <span className="section-label">Upgrades</span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.375rem' }}>
+            <div className="flex flex-wrap gap-1.5">
               {sortedUpgrades.map(([id, level]) => (
                 <span
                   key={id}
-                  style={{
-                    fontSize: '.7rem',
-                    padding: '.25rem .5rem',
-                    background: 'var(--bg)',
-                    border: '1px solid var(--border-hi)',
-                    color: '#9a9aa8',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '.375rem',
-                  }}
+                  className="flex items-center gap-1.5 px-2 py-1 bg-bg border border-border-hi text-zinc-400"
+                  style={{ fontSize: '.7rem' }}
                 >
                   {upgradeLabel(id)}
-                  {level > 1 && <span style={{ color: 'var(--muted)' }}>·{level}</span>}
+                  {level > 1 && <span className="text-muted">·{level}</span>}
                 </span>
               ))}
             </div>
@@ -282,25 +204,17 @@ export default function PlayerCard({ player }: { player: Player }) {
 
         {/* Buildings built */}
         {sortedBuildings.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+          <div className="flex flex-col gap-2">
             <span className="section-label">Buildings built</span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.375rem' }}>
+            <div className="flex flex-wrap gap-1.5">
               {sortedBuildings.map(([id, count]) => (
                 <span
                   key={id}
-                  style={{
-                    fontSize: '.7rem',
-                    padding: '.25rem .5rem',
-                    background: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '.375rem',
-                  }}
+                  className="flex items-center gap-1.5 px-2 py-1 bg-bg border border-border text-foreground"
+                  style={{ fontSize: '.7rem' }}
                 >
                   {buildingLabel(id)}
-                  <span style={{ color: 'var(--muted)' }}>×{count}</span>
+                  <span className="text-muted">×{count}</span>
                 </span>
               ))}
             </div>
@@ -309,32 +223,15 @@ export default function PlayerCard({ player }: { player: Player }) {
 
         {/* Build Order */}
         {buildOrder.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+          <div className="flex flex-col gap-2">
             <span className="section-label">Build order</span>
-            <ol
-              style={{
-                listStyle: 'none',
-                margin: 0,
-                padding: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '.2rem',
-              }}
-            >
+            <ol className="list-none m-0 p-0 flex flex-col gap-[.2rem]">
               {buildOrder.map((entry, i) => (
-                <li
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '.625rem',
-                    fontSize: '.7rem',
-                  }}
-                >
-                  <span className="font-mono" style={{ color: 'var(--muted)', flexShrink: 0 }}>
+                <li key={i} className="flex items-center gap-2.5" style={{ fontSize: '.7rem' }}>
+                  <span className="font-mono text-muted flex-shrink-0">
                     {formatGameTime(entry.ms)}
                   </span>
-                  <span style={{ color: 'var(--text)' }}>{buildingLabel(entry.id)}</span>
+                  <span className="text-foreground">{buildingLabel(entry.id)}</span>
                 </li>
               ))}
             </ol>
@@ -347,15 +244,14 @@ export default function PlayerCard({ player }: { player: Player }) {
 
 function AbilityDots({ level, faded = false }: { level: number; faded?: boolean }) {
   return (
-    <span style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+    <span className="flex gap-[2px] flex-shrink-0">
       {[1, 2, 3].map((i) => (
         <span
           key={i}
+          className="inline-block rounded-full"
           style={{
-            display: 'inline-block',
             width: 5,
             height: 5,
-            borderRadius: '50%',
             background:
               i <= level ? (faded ? 'var(--border-hi)' : 'var(--accent)') : 'var(--border)',
           }}

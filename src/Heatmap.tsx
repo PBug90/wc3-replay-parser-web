@@ -24,15 +24,31 @@ export interface PositionedAction {
   y: number
 }
 
+export interface PositionedBuilding {
+  time: number
+  playerId: number
+  buildingId: string
+  x: number
+  y: number
+}
+
 interface HeatmapProps {
   actions: PositionedAction[]
+  buildings: PositionedBuilding[]
   mapFile: string
   playerIdColorMap: Record<number, string>
   width?: number
   height?: number
+  // Controlled mode (used when a parent manages a shared slider)
+  playhead?: number
+  onPlayheadChange?: (v: number) => void
+  windowSec?: number
+  showBuildings?: boolean
+  hideControls?: boolean
 }
 
 const DOT_RADIUS = 14 // canvas pixels (radial gradient radius)
+const ICON_SIZE = 19 // canvas pixels for building icon square
 
 function fmt(sec: number): string {
   const m = Math.floor(sec / 60)
@@ -52,12 +68,25 @@ function hexToRgb(hex: string): [number, number, number] {
 
 export default function Heatmap({
   actions,
+  buildings,
   mapFile,
   playerIdColorMap,
   width = 500,
   height = 500,
+  playhead: playheadProp,
+  onPlayheadChange,
+  windowSec: windowSecProp,
+  showBuildings: showBuildingsProp,
+  hideControls = false,
 }: HeatmapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [showBuildingsInternal, setShowBuildingsInternal] = useState(true)
+  const showBuildings = showBuildingsProp ?? showBuildingsInternal
+
+  // Cache of loaded building icons: id → HTMLImageElement (null while loading / failed)
+  const imgCacheRef = useRef<Map<string, HTMLImageElement | null>>(new Map())
+  // Always points to the latest draw fn so async onload callbacks stay current
+  const drawFnRef = useRef<() => void>(() => {})
 
   // Total game length derived from the last recorded action.
   const maxSec = useMemo(
@@ -67,13 +96,18 @@ export default function Heatmap({
 
   // playhead = end of the visible window (seconds).
   // windowSec = how many seconds the window covers.
-  const [playhead, setPlayhead] = useState(Math.min(30, maxSec))
-  const [windowSec, setWindowSec] = useState(60)
+  const [playheadInternal, setPlayheadInternal] = useState(Math.min(30, maxSec))
+  const [windowSecInternal, setWindowSecInternal] = useState(60)
+
+  const playhead = playheadProp ?? playheadInternal
+  const setPlayhead = onPlayheadChange ?? setPlayheadInternal
+  const windowSec = windowSecProp ?? windowSecInternal
+  const setWindowSec = setWindowSecInternal
 
   // Reset playhead when a new replay is loaded.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPlayhead(Math.min(60, maxSec))
+    setPlayheadInternal(Math.min(60, maxSec))
   }, [actions, maxSec])
 
   const endSec = Math.min(playhead, maxSec)
@@ -128,7 +162,59 @@ export default function Heatmap({
     }
 
     ctx.globalCompositeOperation = 'source-over'
-  }, [actions, mapInfo, rgbCache, startSec, endSec, width, height])
+
+    if (showBuildings) {
+      const half = ICON_SIZE / 2
+
+      for (const b of buildings) {
+        if (b.time < startMs || b.time > endMs) continue
+
+        const bx = (b.x - offsetX) / xScale + width / 2
+        const by = height / 2 - (b.y - offsetY) / yScale
+
+        if (bx < -half || bx > width + half || by < -half || by > height + half) continue
+
+        const [r, g, b_] = rgbCache[b.playerId] ?? [255, 255, 255]
+        const img = imgCacheRef.current.get(b.buildingId)
+
+        if (img) {
+          ctx.drawImage(img, bx - half, by - half, ICON_SIZE, ICON_SIZE)
+        } else {
+          // Fallback while image loads: filled square in player colour
+          ctx.fillStyle = `rgba(${r},${g},${b_},0.7)`
+          ctx.fillRect(bx - half, by - half, ICON_SIZE, ICON_SIZE)
+        }
+
+        // Coloured 1 px border around the icon
+        ctx.strokeStyle = `rgba(${r},${g},${b_},0.9)`
+        ctx.lineWidth = 1
+        ctx.strokeRect(bx - half - 0.5, by - half - 0.5, ICON_SIZE + 1, ICON_SIZE + 1)
+      }
+    }
+  }, [actions, buildings, showBuildings, mapInfo, rgbCache, startSec, endSec, width, height])
+
+  // Keep drawFnRef current so image-load callbacks always call the latest version
+  useEffect(() => {
+    drawFnRef.current = draw
+  })
+
+  // Load icons for every unique building ID in the dataset
+  useEffect(() => {
+    if (!showBuildings) return
+    const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+    const uniqueIds = [...new Set(buildings.map((b) => b.buildingId))]
+
+    for (const id of uniqueIds) {
+      if (imgCacheRef.current.has(id)) continue
+      imgCacheRef.current.set(id, null) // mark as in-flight
+      const img = new Image()
+      img.onload = () => {
+        imgCacheRef.current.set(id, img)
+        drawFnRef.current()
+      }
+      img.src = `${base}/buildings/${id}.png`
+    }
+  }, [buildings, showBuildings])
 
   useEffect(() => {
     draw()
@@ -152,53 +238,74 @@ export default function Heatmap({
 
       {/* Map + canvas overlay */}
       <div
-        style={{ width, height, position: 'relative' }}
-        className="rounded overflow-hidden border border-zinc-700"
+        className="relative rounded overflow-hidden border border-zinc-700"
+        style={{ width, height }}
       >
-        <img src={mapInfo.image} alt="map" style={{ width, height, display: 'block' }} />
-        <canvas
-          ref={canvasRef}
-          width={width}
-          height={height}
-          style={{ position: 'absolute', left: 0, top: 0 }}
-        />
+        <img src={mapInfo.image} alt="map" className="block" style={{ width, height }} />
+        <canvas ref={canvasRef} width={width} height={height} className="absolute left-0 top-0" />
       </div>
 
       {/* Time slider */}
-      <div className="flex flex-col gap-1.5">
-        <input
-          type="range"
-          min={0}
-          max={maxSec}
-          step={1}
-          value={playhead}
-          onChange={(e) => setPlayhead(Number(e.target.value))}
-          className="w-full accent-zinc-400 cursor-pointer"
-        />
-        <div className="flex justify-between text-xs text-zinc-500 select-none">
-          <span>{fmt(startSec)}</span>
-          <span className="text-zinc-400">{visibleCount} actions</span>
-          <span>{fmt(endSec)}</span>
+      {!hideControls && (
+        <div className="flex flex-col gap-1.5">
+          <input
+            type="range"
+            min={0}
+            max={maxSec}
+            step={1}
+            value={playhead}
+            onChange={(e) => setPlayhead(Number(e.target.value))}
+            className="w-full accent-zinc-400 cursor-pointer"
+          />
+          <div className="flex justify-between text-xs text-zinc-500 select-none">
+            <span>{fmt(startSec)}</span>
+            <span className="text-zinc-400">{visibleCount} actions</span>
+            <span>{fmt(endSec)}</span>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Window-size control */}
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
-        <span>Window</span>
-        {[10, 30, 45, 60].map((s) => (
-          <label key={s} className="flex items-center gap-1 cursor-pointer select-none">
-            <input
-              type="radio"
-              name="windowSec"
-              value={s}
-              checked={windowSec === s}
-              onChange={() => setWindowSec(s)}
-              className="accent-zinc-400"
-            />
-            <span className={windowSec === s ? 'text-zinc-300' : ''}>{s}s</span>
-          </label>
-        ))}
-      </div>
+      {/* Window-size control + buildings toggle */}
+      {!hideControls && (
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="section-label">Window</span>
+            <div className="flex">
+              {[10, 30, 45, 60].map((s, i) => (
+                <button
+                  key={s}
+                  onClick={() => setWindowSec(s)}
+                  className="btn-flat"
+                  style={{
+                    borderRight: i < 3 ? 'none' : undefined,
+                    color: windowSec === s ? 'var(--gold)' : undefined,
+                    background: windowSec === s ? 'rgba(240,192,48,0.1)' : undefined,
+                    borderColor: windowSec === s ? 'rgba(240,192,48,0.6)' : undefined,
+                  }}
+                >
+                  {s}s
+                </button>
+              ))}
+            </div>
+          </div>
+          {buildings.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="section-label">Show</span>
+              <button
+                onClick={() => setShowBuildingsInternal(!showBuildings)}
+                className="btn-flat"
+                style={{
+                  color: showBuildings ? 'var(--gold)' : undefined,
+                  background: showBuildings ? 'rgba(240,192,48,0.1)' : undefined,
+                  borderColor: showBuildings ? 'rgba(240,192,48,0.6)' : undefined,
+                }}
+              >
+                Buildings
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Player colour legend */}
       {Object.keys(playerIdColorMap).length > 0 && (

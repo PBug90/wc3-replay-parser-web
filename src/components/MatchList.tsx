@@ -31,15 +31,12 @@ function MatchRow({ match, tagLower, isDownloading, busy, onSelect }: MatchRowPr
   return (
     <div
       onClick={() => !busy && onSelect(match)}
+      className="grid items-center gap-4 transition-[background] duration-100"
       style={{
-        display: 'grid',
         gridTemplateColumns: '28px 1fr 1fr 52px 90px',
-        alignItems: 'center',
-        gap: '1rem',
         padding: '.6rem 1rem',
         cursor: busy ? 'default' : 'pointer',
         opacity: busy && !isDownloading ? 0.4 : 1,
-        transition: 'background .1s',
       }}
       onMouseEnter={(e) => {
         if (!busy) (e.currentTarget as HTMLElement).style.background = 'var(--surface)'
@@ -49,7 +46,7 @@ function MatchRow({ match, tagLower, isDownloading, busy, onSelect }: MatchRowPr
       }}
     >
       <span
-        className="font-mono"
+        className="font-mono text-center"
         style={{
           fontSize: '.62rem',
           fontWeight: 700,
@@ -57,33 +54,21 @@ function MatchRow({ match, tagLower, isDownloading, busy, onSelect }: MatchRowPr
           color: won ? '#4ade80' : '#f87171',
           border: `1px solid ${won ? '#4ade80' : '#f87171'}`,
           padding: '1px 3px',
-          textAlign: 'center',
         }}
       >
         {won ? 'W' : 'L'}
       </span>
 
       <span
-        style={{
-          fontSize: '.78rem',
-          color: 'var(--text)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
+        className="text-foreground overflow-hidden text-ellipsis whitespace-nowrap"
+        style={{ fontSize: '.78rem' }}
       >
         {match.mapName ?? '—'}
       </span>
 
       <span
-        className="font-mono"
-        style={{
-          fontSize: '.7rem',
-          color: 'var(--muted)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
+        className="font-mono text-muted overflow-hidden text-ellipsis whitespace-nowrap"
+        style={{ fontSize: '.7rem' }}
       >
         vs{' '}
         {opponents
@@ -95,20 +80,15 @@ function MatchRow({ match, tagLower, isDownloading, busy, onSelect }: MatchRowPr
           .join(', ')}
       </span>
 
-      <span
-        className="font-mono"
-        style={{ fontSize: '.68rem', color: 'var(--muted)', textAlign: 'right' }}
-      >
+      <span className="font-mono text-muted text-right" style={{ fontSize: '.68rem' }}>
         {fmtDuration(match.durationInSeconds ?? 0)}
       </span>
 
       <span
-        className="font-mono"
+        className="font-mono text-right whitespace-nowrap"
         style={{
           fontSize: '.68rem',
           color: isDownloading ? 'var(--accent)' : 'var(--muted)',
-          textAlign: 'right',
-          whiteSpace: 'nowrap',
         }}
       >
         {isDownloading ? 'Downloading…' : fmtDate(match.endTime)}
@@ -144,9 +124,9 @@ export default function MatchList({
 
   return (
     <>
-      <div style={{ border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
+      <div className="border border-border flex flex-col">
         {matches.map((match, i) => (
-          <div key={match.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
+          <div key={match.id} className={i > 0 ? 'border-t border-border' : ''}>
             <MatchRow
               match={match}
               tagLower={tagLower}
@@ -159,7 +139,7 @@ export default function MatchList({
       </div>
 
       {count > PAGE_SIZE && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+        <div className="flex items-center gap-3">
           <button
             className="btn-flat"
             disabled={offset === 0 || fetching}
@@ -167,10 +147,7 @@ export default function MatchList({
           >
             ← PREV
           </button>
-          <span
-            className="font-mono"
-            style={{ fontSize: '.68rem', color: 'var(--muted)', flex: 1, textAlign: 'center' }}
-          >
+          <span className="font-mono text-muted flex-1 text-center" style={{ fontSize: '.68rem' }}>
             {offset + 1}–{Math.min(offset + PAGE_SIZE, count)} of {count}
           </span>
           <button

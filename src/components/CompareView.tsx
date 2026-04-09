@@ -1,0 +1,447 @@
+import { useState, useMemo } from 'react'
+import type { ParserOutput } from 'w3gjs/dist/types/types'
+import { formatGameTime } from '../format'
+import { collectRows } from '../timingUtils'
+import Heatmap, { type PositionedAction, type PositionedBuilding } from '../Heatmap'
+
+type Player = ParserOutput['players'][number]
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+
+const TIER_COLOR: Record<string, string> = {
+  Adept: '#7dd3fc',
+  Master: 'var(--accent)',
+}
+
+function EventIcon({
+  id,
+  detail,
+  kind,
+}: {
+  id: string
+  detail: string
+  kind: 'building' | 'upgrade'
+}) {
+  if (kind === 'building') {
+    return (
+      <img
+        src={`${BASE}/buildings/${id}.png`}
+        width={16}
+        height={16}
+        style={{ imageRendering: 'pixelated', display: 'block', flexShrink: 0 }}
+      />
+    )
+  }
+  const suffix = detail ? `_${detail}` : ''
+  return (
+    <img
+      src={`${BASE}/upgrades/${id}${suffix}.png`}
+      width={16}
+      height={16}
+      style={{ imageRendering: 'pixelated', display: 'block', flexShrink: 0 }}
+    />
+  )
+}
+
+type MergedRow = {
+  key: string
+  id: string
+  label: string
+  detail: string
+  kind: 'building' | 'upgrade'
+  msA: number | null
+  msB: number | null
+}
+
+function mergeTimings(playerA: Player, playerB: Player): MergedRow[] {
+  const rowsA = collectRows([playerA])
+  const rowsB = collectRows([playerB])
+  const map = new Map<string, MergedRow>()
+
+  for (const r of rowsA) {
+    const key = r.detail ? `${r.label}·${r.detail}` : r.label
+    map.set(key, {
+      key,
+      id: r.id,
+      label: r.label,
+      detail: r.detail,
+      kind: r.kind,
+      msA: r.ms,
+      msB: null,
+    })
+  }
+  for (const r of rowsB) {
+    const key = r.detail ? `${r.label}·${r.detail}` : r.label
+    const existing = map.get(key)
+    if (existing) {
+      existing.msB = r.ms
+    } else {
+      map.set(key, {
+        key,
+        id: r.id,
+        label: r.label,
+        detail: r.detail,
+        kind: r.kind,
+        msA: null,
+        msB: r.ms,
+      })
+    }
+  }
+
+  return [...map.values()].sort((a, b) => {
+    const tA = Math.min(a.msA ?? Infinity, a.msB ?? Infinity)
+    const tB = Math.min(b.msA ?? Infinity, b.msB ?? Infinity)
+    return tA - tB
+  })
+}
+
+function fmtDelta(msA: number, msB: number): { text: string; faster: 'A' | 'B' | 'tie' } {
+  if (msA === msB) return { text: '0:00', faster: 'tie' }
+  const diff = msA - msB
+  const abs = Math.abs(diff)
+  const m = Math.floor(abs / 60000)
+  const s = Math.floor((abs % 60000) / 1000)
+  return {
+    text: `${diff < 0 ? '−' : '+'}${m}:${String(s).padStart(2, '0')}`,
+    faster: diff < 0 ? 'A' : 'B',
+  }
+}
+
+const thStyle: React.CSSProperties = {
+  padding: '.3rem .6rem',
+  fontSize: '.6rem',
+  letterSpacing: '.08em',
+}
+
+const tdStyle: React.CSSProperties = { padding: '.28rem .6rem' }
+
+interface Props {
+  replayA: ParserOutput
+  replayB: ParserOutput
+  fileNameA: string | null
+  fileNameB: string | null
+  actionsA: PositionedAction[]
+  buildingsA: PositionedBuilding[]
+  actionsB: PositionedAction[]
+  buildingsB: PositionedBuilding[]
+}
+
+function fmt(sec: number): string {
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+export default function CompareView({
+  replayA,
+  replayB,
+  fileNameA,
+  fileNameB,
+  actionsA,
+  buildingsA,
+  actionsB,
+  buildingsB,
+}: Props) {
+  const playersA = replayA.players ?? []
+  const playersB = replayB.players ?? []
+  const [idxA, setIdxA] = useState(0)
+  const [idxB, setIdxB] = useState(0)
+
+  // Shared heatmap controls
+  const maxSecA = useMemo(
+    () => (actionsA.length > 0 ? Math.ceil(Math.max(...actionsA.map((a) => a.time)) / 1000) : 600),
+    [actionsA],
+  )
+  const maxSecB = useMemo(
+    () => (actionsB.length > 0 ? Math.ceil(Math.max(...actionsB.map((a) => a.time)) / 1000) : 600),
+    [actionsB],
+  )
+  const maxSec = Math.max(maxSecA, maxSecB)
+  const [playhead, setPlayhead] = useState(60)
+  const [windowSec, setWindowSec] = useState(60)
+  const [showBuildings, setShowBuildings] = useState(true)
+
+  const startSec = Math.max(0, Math.min(playhead, maxSec) - windowSec)
+  const endSec = Math.min(playhead, maxSec)
+
+  const playerIdColorMapA = useMemo(() => {
+    const m: Record<number, string> = {}
+    for (const p of replayA.players ?? []) m[p.id] = p.color
+    return m
+  }, [replayA])
+
+  const playerIdColorMapB = useMemo(() => {
+    const m: Record<number, string> = {}
+    for (const p of replayB.players ?? []) m[p.id] = p.color
+    return m
+  }, [replayB])
+
+  const mapFileA = replayA.map?.path ?? ''
+  const mapFileB = replayB.map?.path ?? ''
+
+  const showHeatmaps = actionsA.length > 0 || actionsB.length > 0
+
+  const playerA = playersA[idxA]
+  const playerB = playersB[idxB]
+  const rows = playerA && playerB ? mergeTimings(playerA, playerB) : []
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Player selectors */}
+      <div className="flex gap-8">
+        {(
+          [
+            {
+              label: 'Replay A',
+              players: playersA,
+              idx: idxA,
+              setIdx: setIdxA,
+              fileName: fileNameA,
+              player: playerA,
+            },
+            {
+              label: 'Replay B',
+              players: playersB,
+              idx: idxB,
+              setIdx: setIdxB,
+              fileName: fileNameB,
+              player: playerB,
+            },
+          ] as const
+        ).map(({ label, players, idx, setIdx, fileName, player }) => (
+          <div key={label} className="flex flex-col gap-1.5 flex-1 min-w-0">
+            <span className="section-label">{label}</span>
+            <span className="text-muted truncate" style={{ fontSize: '.68rem' }}>
+              {fileName ?? '—'}
+            </span>
+            <div className="flex items-center gap-2">
+              {player && (
+                <span
+                  className="rounded-full shrink-0"
+                  style={{ width: 7, height: 7, background: player.color }}
+                />
+              )}
+              <select
+                value={idx}
+                onChange={(e) => setIdx(Number(e.target.value))}
+                className="flex-1 min-w-0 bg-surface border border-border-hi text-foreground outline-none cursor-pointer"
+                style={{ padding: '.3rem .5rem', fontSize: '.75rem' }}
+              >
+                {players.map((p, i) => (
+                  <option key={i} value={i}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Side-by-side heatmaps with shared slider */}
+      {showHeatmaps && (
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-4">
+            <div className="flex-1 min-w-0">
+              <Heatmap
+                actions={actionsA}
+                buildings={buildingsA}
+                mapFile={mapFileA}
+                playerIdColorMap={playerIdColorMapA}
+                width={500}
+                height={500}
+                playhead={playhead}
+                onPlayheadChange={setPlayhead}
+                windowSec={windowSec}
+                showBuildings={showBuildings}
+                hideControls
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <Heatmap
+                actions={actionsB}
+                buildings={buildingsB}
+                mapFile={mapFileB}
+                playerIdColorMap={playerIdColorMapB}
+                width={500}
+                height={500}
+                playhead={playhead}
+                onPlayheadChange={setPlayhead}
+                windowSec={windowSec}
+                showBuildings={showBuildings}
+                hideControls
+              />
+            </div>
+          </div>
+
+          {/* Shared controls */}
+          <div className="flex flex-col gap-1.5">
+            <input
+              type="range"
+              min={0}
+              max={maxSec}
+              step={1}
+              value={playhead}
+              onChange={(e) => setPlayhead(Number(e.target.value))}
+              className="w-full accent-zinc-400 cursor-pointer"
+            />
+            <div className="flex justify-between text-xs text-zinc-500 select-none">
+              <span>{fmt(startSec)}</span>
+              <span>{fmt(endSec)}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="section-label">Window</span>
+              <div className="flex">
+                {[10, 30, 45, 60].map((s, i) => (
+                  <button
+                    key={s}
+                    onClick={() => setWindowSec(s)}
+                    className="btn-flat"
+                    style={{
+                      borderRight: i < 3 ? 'none' : undefined,
+                      color: windowSec === s ? 'var(--gold)' : undefined,
+                      background: windowSec === s ? 'rgba(240,192,48,0.1)' : undefined,
+                      borderColor: windowSec === s ? 'rgba(240,192,48,0.6)' : undefined,
+                    }}
+                  >
+                    {s}s
+                  </button>
+                ))}
+              </div>
+            </div>
+            {(buildingsA.length > 0 || buildingsB.length > 0) && (
+              <div className="flex items-center gap-2">
+                <span className="section-label">Show</span>
+                <button
+                  onClick={() => setShowBuildings(!showBuildings)}
+                  className="btn-flat"
+                  style={{
+                    color: showBuildings ? 'var(--gold)' : undefined,
+                    background: showBuildings ? 'rgba(240,192,48,0.1)' : undefined,
+                    borderColor: showBuildings ? 'rgba(240,192,48,0.6)' : undefined,
+                  }}
+                >
+                  Buildings
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Comparison table */}
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted">No key timings found for the selected players.</p>
+      ) : (
+        <div className="border border-border bg-surface overflow-x-auto">
+          <table
+            className="w-full border-collapse wc3-table"
+            style={{ fontSize: '.72rem', fontFamily: "'JetBrains Mono', monospace" }}
+          >
+            <thead className="sticky top-0 bg-surface z-[1]">
+              <tr>
+                <th
+                  className="text-left text-muted border-b border-border-hi font-normal whitespace-nowrap"
+                  style={{ ...thStyle, padding: '.3rem .5rem .3rem .6rem' }}
+                />
+                <th
+                  className="text-left text-muted border-b border-border-hi font-normal whitespace-nowrap"
+                  style={thStyle}
+                >
+                  Event
+                </th>
+                <th
+                  className="text-left text-muted border-b border-border-hi font-normal whitespace-nowrap"
+                  style={thStyle}
+                >
+                  {playerA?.name ?? 'A'}
+                </th>
+                <th
+                  className="text-left text-muted border-b border-border-hi font-normal whitespace-nowrap"
+                  style={thStyle}
+                >
+                  {playerB?.name ?? 'B'}
+                </th>
+                <th
+                  className="text-left text-muted border-b border-border-hi font-normal whitespace-nowrap"
+                  style={thStyle}
+                >
+                  Δ
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => {
+                const hasBoth = row.msA !== null && row.msB !== null
+                const delta = hasBoth ? fmtDelta(row.msA!, row.msB!) : null
+                const aColor = hasBoth
+                  ? delta!.faster === 'A'
+                    ? '#4ade80'
+                    : delta!.faster === 'tie'
+                      ? 'var(--muted)'
+                      : '#f87171'
+                  : 'var(--muted)'
+                const bColor = hasBoth
+                  ? delta!.faster === 'B'
+                    ? '#4ade80'
+                    : delta!.faster === 'tie'
+                      ? 'var(--muted)'
+                      : '#f87171'
+                  : 'var(--muted)'
+                const deltaColor = delta
+                  ? delta.faster === 'A'
+                    ? '#4ade80'
+                    : delta.faster === 'B'
+                      ? '#f87171'
+                      : 'var(--muted)'
+                  : 'var(--muted)'
+
+                return (
+                  <tr key={i} className="border-b border-border">
+                    <td className="align-middle" style={{ padding: '.28rem .4rem .28rem .6rem' }}>
+                      <div className="flex items-center justify-center" style={{ width: 16 }}>
+                        <EventIcon id={row.id} detail={row.detail} kind={row.kind} />
+                      </div>
+                    </td>
+                    <td className="align-middle whitespace-nowrap" style={tdStyle}>
+                      <span className="text-foreground">{row.label}</span>
+                      {row.detail && (
+                        <span
+                          className="ml-1.5"
+                          style={{ color: TIER_COLOR[row.detail], fontSize: '.6rem' }}
+                        >
+                          {row.detail}
+                        </span>
+                      )}
+                    </td>
+                    <td
+                      className="align-middle whitespace-nowrap font-mono"
+                      style={{ ...tdStyle, color: aColor }}
+                    >
+                      {row.msA !== null ? formatGameTime(row.msA) : '—'}
+                    </td>
+                    <td
+                      className="align-middle whitespace-nowrap font-mono"
+                      style={{ ...tdStyle, color: bColor }}
+                    >
+                      {row.msB !== null ? formatGameTime(row.msB) : '—'}
+                    </td>
+                    <td
+                      className="align-middle whitespace-nowrap font-mono"
+                      style={{ ...tdStyle, color: deltaColor }}
+                    >
+                      {delta ? delta.text : '—'}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
