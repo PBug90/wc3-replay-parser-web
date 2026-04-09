@@ -13,7 +13,7 @@ test('parses an example replay uploaded via file input', async ({ page }) => {
   await fileInput.setInputFiles(path.join(__dirname, '../public/replays/example1.w3g'))
 
   // Wait for parsing to finish — the results header appears
-  await expect(page.getByRole('button', { name: /PARSE ANOTHER REPLAY/ })).toBeVisible({
+  await expect(page.getByRole('button', { name: /New Replay/i })).toBeVisible({
     timeout: 30_000,
   })
 
@@ -63,7 +63,7 @@ test('finds a W3C player via autocomplete, downloads their replay, and parses it
   await firstBadge.click()
 
   // Wait for parsing to finish
-  await expect(page.getByRole('button', { name: /PARSE ANOTHER REPLAY/ })).toBeVisible({
+  await expect(page.getByRole('button', { name: /New Replay/i })).toBeVisible({
     timeout: 30_000,
   })
 
