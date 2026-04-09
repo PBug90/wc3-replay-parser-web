@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { fetchMatches, fetchReplay, fetchTopPlayerTags, GATEWAYS, Match } from '../api/w3c'
+import { fetchMatches, fetchReplay, fetchTopPlayerTags, Match } from '../api/w3c'
 import PlayerSearchInput from './PlayerSearchInput'
 import MatchList from './MatchList'
 
@@ -11,7 +11,6 @@ interface Props {
 export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
   const [tag, setTag] = useState('')
   const [season, setSeason] = useState('24')
-  const [gateway, setGateway] = useState('20')
   const [matches, setMatches] = useState<Match[]>([])
   const [count, setCount] = useState(0)
   const [offset, setOffset] = useState(0)
@@ -23,7 +22,7 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
 
   useEffect(() => {
     let cancelled = false
-    fetchTopPlayerTags(season, gateway)
+    fetchTopPlayerTags(season)
       .then((tags) => {
         if (!cancelled) setTopPlayers(tags)
       })
@@ -31,7 +30,7 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
     return () => {
       cancelled = true
     }
-  }, [season, gateway])
+  }, [season])
 
   const search = useCallback(
     async (newOffset = 0) => {
@@ -41,7 +40,7 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
       setFetchError(null)
       setLastSearchedTag(trimmed)
       try {
-        const { matches: m, count: c } = await fetchMatches(trimmed, gateway, season, newOffset)
+        const { matches: m, count: c } = await fetchMatches(trimmed, season, newOffset)
         setMatches(m)
         setCount(c)
         setOffset(newOffset)
@@ -52,7 +51,7 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
         setFetching(false)
       }
     },
-    [tag, season, gateway],
+    [tag, season],
   )
 
   const handleSelectMatch = useCallback(
@@ -91,53 +90,26 @@ export default function W3CMatchBrowser({ loading, onBuffer }: Props) {
         </button>
       </div>
 
-      {/* Season + Gateway */}
-      <div className="flex gap-4 items-center">
-        <div className="flex items-center gap-2">
-          <span
-            className="font-mono text-muted"
-            style={{ fontSize: '.68rem', letterSpacing: '.06em' }}
-          >
-            SEASON
-          </span>
-          <input
-            type="number"
-            value={season}
-            min={1}
-            onChange={(e) => setSeason(e.target.value)}
-            className="font-mono bg-surface border border-border-hi text-foreground text-center outline-none"
-            style={{
-              width: 52,
-              padding: '.3rem .5rem',
-              fontSize: '.75rem',
-            }}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <span
-            className="font-mono text-muted"
-            style={{ fontSize: '.68rem', letterSpacing: '.06em' }}
-          >
-            GATEWAY
-          </span>
-          <div className="flex gap-[.35rem]">
-            {GATEWAYS.map((gw) => (
-              <button
-                key={gw.value}
-                className="btn-flat"
-                onClick={() => setGateway(gw.value)}
-                style={{
-                  fontSize: '.65rem',
-                  padding: '.25rem .6rem',
-                  borderColor: gateway === gw.value ? 'var(--accent)' : undefined,
-                  color: gateway === gw.value ? 'var(--accent)' : undefined,
-                }}
-              >
-                {gw.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Season */}
+      <div className="flex items-center gap-2">
+        <span
+          className="font-mono text-muted"
+          style={{ fontSize: '.68rem', letterSpacing: '.06em' }}
+        >
+          SEASON
+        </span>
+        <input
+          type="number"
+          value={season}
+          min={1}
+          onChange={(e) => setSeason(e.target.value)}
+          className="font-mono bg-surface border border-border-hi text-foreground text-center outline-none"
+          style={{
+            width: 52,
+            padding: '.3rem .5rem',
+            fontSize: '.75rem',
+          }}
+        />
       </div>
 
       {/* Error */}

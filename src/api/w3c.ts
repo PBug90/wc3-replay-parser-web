@@ -3,11 +3,7 @@ export const PAGE_SIZE = 10
 
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000 // 1 week
 
-export const GATEWAYS = [
-  { label: 'Europe', value: '20' },
-  { label: 'Americas', value: '10' },
-  { label: 'Asia', value: '30' },
-]
+const DEFAULT_GATEWAY = '20'
 
 export const RACE_LABELS: Record<number, string> = {
   1: 'HU',
@@ -43,13 +39,12 @@ interface LadderEntry {
 
 export async function fetchMatches(
   playerId: string,
-  gateway: string,
   season: string,
   offset: number,
 ): Promise<{ matches: Match[]; count: number }> {
   const params = new URLSearchParams({
     playerId,
-    gateway,
+    gateway: DEFAULT_GATEWAY,
     season,
     offset: String(offset),
     pageSize: String(PAGE_SIZE),
@@ -66,8 +61,8 @@ export async function fetchReplay(matchId: string): Promise<ArrayBuffer> {
   return res.arrayBuffer()
 }
 
-export async function fetchTopPlayerTags(season: string, gateway: string): Promise<string[]> {
-  const cacheKey = `w3c_top_players_s${season}_gw${gateway}`
+export async function fetchTopPlayerTags(season: string): Promise<string[]> {
+  const cacheKey = `w3c_top_players_s${season}_gw${DEFAULT_GATEWAY}`
 
   try {
     const cached = localStorage.getItem(cacheKey)
@@ -81,7 +76,7 @@ export async function fetchTopPlayerTags(season: string, gateway: string): Promi
 
   const leagues = await Promise.all(
     [0, 1, 2].map((leagueId) =>
-      fetch(`${API_BASE}/ladder/${leagueId}?season=${season}&gateWay=${gateway}&gameMode=1`)
+      fetch(`${API_BASE}/ladder/${leagueId}?season=${season}&gateWay=${DEFAULT_GATEWAY}&gameMode=1`)
         .then((r) => (r.ok ? (r.json() as Promise<LadderEntry[]>) : []))
         .catch((): LadderEntry[] => []),
     ),
