@@ -102,36 +102,110 @@ export default function ReplayView({ replay, actions, buildings, fileName }: Rep
         </Section>
       )}
 
+      {/* Teams */}
+      {Object.keys(teams).length > 0 && (
+        <Section label="Players & Teams">
+          {Object.keys(teams).length === 2 ? (
+            // Side-by-side layout for 2-team games (1v1, 2v2, 3v3, 4v4)
+            (() => {
+              const [[tid0, t0players], [tid1, t1players]] = Object.entries(teams)
+              return (
+                <div
+                  className="grid items-start"
+                  style={{ gridTemplateColumns: '1fr auto 1fr', gap: 0 }}
+                >
+                  {/* Team 1 */}
+                  <div className="flex flex-col gap-3">
+                    <span
+                      className="font-display text-muted"
+                      style={{ fontSize: '.55rem', letterSpacing: '.25em' }}
+                    >
+                      ── TEAM {Number(tid0) + 1} ──
+                    </span>
+                    <div className="flex flex-col gap-4">
+                      {t0players.map((player) => (
+                        <PlayerCard key={player.id ?? player.name} player={player} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* VS divider */}
+                  <div
+                    className="flex flex-col items-center self-stretch mx-5"
+                    style={{ paddingTop: '1.65rem' }}
+                  >
+                    <div
+                      className="flex-1 w-px"
+                      style={{
+                        background: 'linear-gradient(to bottom, transparent, rgba(200,160,80,0.3))',
+                      }}
+                    />
+                    <span
+                      className="font-display py-3"
+                      style={{
+                        fontSize: '.6rem',
+                        letterSpacing: '.22em',
+                        color: 'var(--gold)',
+                        opacity: 0.5,
+                      }}
+                    >
+                      VS
+                    </span>
+                    <div
+                      className="flex-1 w-px"
+                      style={{
+                        background: 'linear-gradient(to top, transparent, rgba(200,160,80,0.3))',
+                      }}
+                    />
+                  </div>
+
+                  {/* Team 2 */}
+                  <div className="flex flex-col gap-3">
+                    <span
+                      className="font-display text-muted"
+                      style={{ fontSize: '.55rem', letterSpacing: '.25em', textAlign: 'right' }}
+                    >
+                      ── TEAM {Number(tid1) + 1} ──
+                    </span>
+                    <div className="flex flex-col gap-4">
+                      {t1players.map((player) => (
+                        <PlayerCard key={player.id ?? player.name} player={player} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()
+          ) : (
+            // Vertical layout for FFA or other team counts
+            <div className="flex flex-col gap-8">
+              {Object.entries(teams).map(([teamId, teamPlayers]) => (
+                <div key={teamId} className="flex flex-col gap-3">
+                  <span
+                    className="font-display text-muted"
+                    style={{ fontSize: '.55rem', letterSpacing: '.25em' }}
+                  >
+                    ── TEAM {Number(teamId) + 1} ──
+                  </span>
+                  <div
+                    className="grid gap-4"
+                    style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}
+                  >
+                    {teamPlayers.map((player) => (
+                      <PlayerCard key={player.id ?? player.name} player={player} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Section>
+      )}
+
       {/* APM chart */}
       {players.some((p) => p.actions?.timed?.length > 0) && (
         <Section label="Actions Per Minute">
           <ApmChart players={players} trackingInterval={replay.apm.trackingInterval} />
-        </Section>
-      )}
-
-      {/* Teams */}
-      {Object.keys(teams).length > 0 && (
-        <Section label="Heroes & Forces">
-          <div className="flex flex-col gap-8">
-            {Object.entries(teams).map(([teamId, teamPlayers]) => (
-              <div key={teamId} className="flex flex-col gap-3">
-                <span
-                  className="font-display text-muted"
-                  style={{ fontSize: '.55rem', letterSpacing: '.25em' }}
-                >
-                  ── TEAM {Number(teamId) + 1} ──
-                </span>
-                <div
-                  className="grid gap-4"
-                  style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}
-                >
-                  {teamPlayers.map((player) => (
-                    <PlayerCard key={player.id ?? player.name} player={player} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
         </Section>
       )}
 

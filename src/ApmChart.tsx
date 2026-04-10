@@ -47,7 +47,7 @@ export default function ApmChart({ players, trackingInterval }: ApmChartProps) {
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
-        style={{ maxWidth: W }}
+        style={{ maxWidth: '100%' }}
         className="overflow-visible"
       >
         <g transform={`translate(${MARGIN.left},${MARGIN.top})`}>

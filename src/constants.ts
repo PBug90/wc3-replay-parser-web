@@ -52,4 +52,5 @@ export const EXAMPLE_REPLAYS = [
   { label: 'Example 1', url: `${base}/replays/example1.w3g` },
   { label: 'Example 2', url: `${base}/replays/example2.w3g` },
   { label: 'Example 3', url: `${base}/replays/example3.w3g` },
+  { label: 'Example 4', url: `${base}/replays/example4.w3g` },
 ]

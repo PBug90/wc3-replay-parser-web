@@ -7,7 +7,6 @@ import {
   upgradeLabel,
   abilityLabel,
   buildingLabel,
-  formatGameTime,
 } from '../format'
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
@@ -218,23 +217,6 @@ export default function PlayerCard({ player }: { player: Player }) {
                 </span>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Build Order */}
-        {buildOrder.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <span className="section-label">Build order</span>
-            <ol className="list-none m-0 p-0 flex flex-col gap-[.2rem]">
-              {buildOrder.map((entry, i) => (
-                <li key={i} className="flex items-center gap-2.5" style={{ fontSize: '.7rem' }}>
-                  <span className="font-mono text-muted flex-shrink-0">
-                    {formatGameTime(entry.ms)}
-                  </span>
-                  <span className="text-foreground">{buildingLabel(entry.id)}</span>
-                </li>
-              ))}
-            </ol>
           </div>
         )}
       </div>
