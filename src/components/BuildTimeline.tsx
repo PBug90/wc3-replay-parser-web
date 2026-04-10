@@ -1,47 +1,11 @@
 import { useState } from 'react'
 import type { ParserOutput } from 'w3gjs/dist/types/types'
 import { formatGameTime } from '../format'
-import { collectRows, rowIdentityKey, type TimingRow } from '../timingUtils'
+import { collectRows, rowIdentityKey, TIER_COLOR, type TimingRow } from '../timingUtils'
 import TimingFilter from './TimingFilter'
+import { EventIcon } from './EventIcon'
 
 type Player = ParserOutput['players'][number]
-
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
-
-const TIER_COLOR: Record<string, string> = {
-  Adept: '#7dd3fc',
-  Master: 'var(--accent)',
-}
-
-function EventIcon({
-  id,
-  detail,
-  kind,
-}: {
-  id: string
-  detail: string
-  kind: 'building' | 'upgrade'
-}) {
-  if (kind === 'building') {
-    return (
-      <img
-        src={`${BASE}/buildings/${id}.png`}
-        width={16}
-        height={16}
-        style={{ imageRendering: 'pixelated', display: 'block', flexShrink: 0 }}
-      />
-    )
-  }
-  const suffix = detail === 'Adept' || detail === 'Master' ? `_${detail}` : ''
-  return (
-    <img
-      src={`${BASE}/upgrades/${id}${suffix}.png`}
-      width={16}
-      height={16}
-      style={{ imageRendering: 'pixelated', display: 'block', flexShrink: 0 }}
-    />
-  )
-}
 
 type DisplayRow = TimingRow & { displayDetail: string; originalKey: string }
 

@@ -1,57 +1,16 @@
 import { useState, useMemo } from 'react'
 import type { ParserOutput } from 'w3gjs/dist/types/types'
 import { formatGameTime } from '../format'
-import { collectRows, rowIdentityKey } from '../timingUtils'
+import { collectRows, rowIdentityKey, TIER_COLOR, type TimingRow } from '../timingUtils'
 import Heatmap, { type PositionedAction, type PositionedBuilding } from '../Heatmap'
 import TimingFilter from './TimingFilter'
+import { EventIcon } from './EventIcon'
 
 type Player = ParserOutput['players'][number]
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+const EMPTY_SET = new Set<string>()
 
-const TIER_COLOR: Record<string, string> = {
-  Adept: '#7dd3fc',
-  Master: 'var(--accent)',
-}
-
-function EventIcon({
-  id,
-  detail,
-  kind,
-}: {
-  id: string
-  detail: string
-  kind: 'building' | 'upgrade'
-}) {
-  if (kind === 'building') {
-    return (
-      <img
-        src={`${BASE}/buildings/${id}.png`}
-        width={16}
-        height={16}
-        style={{ imageRendering: 'pixelated', display: 'block', flexShrink: 0 }}
-      />
-    )
-  }
-  const suffix = detail === 'Adept' || detail === 'Master' ? `_${detail}` : ''
-  return (
-    <img
-      src={`${BASE}/upgrades/${id}${suffix}.png`}
-      width={16}
-      height={16}
-      style={{ imageRendering: 'pixelated', display: 'block', flexShrink: 0 }}
-    />
-  )
-}
-
-type SidedRow = {
-  ms: number
-  id: string
-  label: string
-  detail: string
-  kind: 'building' | 'upgrade'
-  originalKey: string
-}
+type SidedRow = Omit<TimingRow, 'player'> & { originalKey: string }
 
 // Filter out hidden rows then renumber #N details so they stay contiguous.
 // originalKey preserves the pre-filter identity so dismiss keys remain stable.
@@ -71,7 +30,7 @@ function filterAndRenumber(player: Player, hiddenKeys: Set<string>): SidedRow[] 
         originalKey,
       }
     }
-    const groupKey = `${row.id}`
+    const groupKey = row.id
     counter[groupKey] = (counter[groupKey] ?? 0) + 1
     return {
       ms: row.ms,
@@ -243,19 +202,16 @@ export default function CompareView({
     keysA: Set<string>
     keysB: Set<string>
   }>({ scopeA: 0, scopeB: 0, keysA: new Set(), keysB: new Set() })
-  const { keysA: hiddenKeysA, keysB: hiddenKeysB } =
-    hiddenState.scopeA === idxA && hiddenState.scopeB === idxB
-      ? { keysA: hiddenState.keysA, keysB: hiddenState.keysB }
-      : { keysA: new Set<string>(), keysB: new Set<string>() }
+  const scopeMatches = hiddenState.scopeA === idxA && hiddenState.scopeB === idxB
+  const hiddenKeysA = scopeMatches ? hiddenState.keysA : EMPTY_SET
+  const hiddenKeysB = scopeMatches ? hiddenState.keysB : EMPTY_SET
 
   const [inactiveIds, setInactiveIds] = useState<Set<string>>(new Set())
 
   const playerA = playersA[idxA]
   const playerB = playersB[idxB]
-  // Unfiltered merge used only to decide whether any timings exist at all
   const allMergedRows =
-    playerA && playerB ? mergeTimings(playerA, playerB, new Set(), new Set()) : []
-  // Filtered merge: per-side hidden rows are removed and renumbered before merging
+    playerA && playerB ? mergeTimings(playerA, playerB, EMPTY_SET, EMPTY_SET) : []
   const rows: DisplayMergedRow[] = (
     playerA && playerB ? mergeTimings(playerA, playerB, hiddenKeysA, hiddenKeysB) : []
   )

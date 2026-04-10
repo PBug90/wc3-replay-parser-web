@@ -37,6 +37,11 @@ export type TimingRow = {
   kind: 'building' | 'upgrade'
 }
 
+export const TIER_COLOR: Record<string, string> = {
+  Adept: '#7dd3fc',
+  Master: 'var(--accent)',
+}
+
 export type RaceEntity = {
   id: string
   label: string
