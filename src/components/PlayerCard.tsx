@@ -7,6 +7,7 @@ import {
   upgradeLabel,
   abilityLabel,
   buildingLabel,
+  formatGameTime,
 } from '../format'
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
