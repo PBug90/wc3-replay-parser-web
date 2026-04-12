@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react'
 import { Buffer } from 'buffer'
 import W3GReplay from 'w3gjs'
-import type { ParserOutput } from 'w3gjs/dist/types/types'
-import type { GameDataBlock } from 'w3gjs/dist/types/parsers/GameDataParser'
+import type { GameDataBlock, ParserOutput } from 'w3gjs'
+
 import type { PositionedAction, PositionedBuilding } from './Heatmap'
 import { BUILDING_NAMES } from './w3g-names'
 

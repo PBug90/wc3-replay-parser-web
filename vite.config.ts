@@ -13,7 +13,6 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      w3gjs: path.resolve(__dirname, 'node_modules/w3gjs/dist/lib/index.js'),
       fs: path.resolve(__dirname, 'src/stubs/fs.js'),
       'node:fs': path.resolve(__dirname, 'src/stubs/fs.js'),
       perf_hooks: path.resolve(__dirname, 'src/stubs/perf_hooks.js'),

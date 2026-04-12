@@ -1,4 +1,4 @@
-import type { ParserOutput } from 'w3gjs/dist/types/types'
+import type { ParserOutput } from 'w3gjs'
 import { BUILDING_NAMES, UPGRADE_NAMES } from './w3g-names'
 
 type Player = ParserOutput['players'][number]

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ParserOutput } from 'w3gjs/dist/types/types'
+import type { ParserOutput } from 'w3gjs'
 import { formatGameTime } from '../format'
 import { collectRows, rowIdentityKey, TIER_COLOR, type TimingRow } from '../timingUtils'
 import TimingFilter from './TimingFilter'

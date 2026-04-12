@@ -1,4 +1,4 @@
-import type { ParserOutput } from 'w3gjs/dist/types/types'
+import type { ParserOutput } from 'w3gjs'
 import type { PositionedAction, PositionedBuilding } from '../Heatmap'
 import Heatmap from '../Heatmap'
 import ApmChart from '../ApmChart'
