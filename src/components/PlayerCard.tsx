@@ -126,16 +126,29 @@ export default function PlayerCard({ player }: { player: Player }) {
                         >
                           Tome of Retraining · {formatGameTime(entry.time)}
                         </p>
-                        <ul className="list-none m-0 p-0 flex flex-col gap-[.2rem]">
+                        <ul className="list-none m-0 p-0 flex flex-row flex-wrap gap-1.5">
                           {Object.entries(entry.abilities as Record<string, number>).map(
                             ([abilId, lvl]) => (
                               <li
                                 key={abilId}
-                                className="flex items-center gap-2 text-muted"
-                                style={{ fontSize: '.7rem' }}
+                                className="flex flex-col items-center gap-[3px] opacity-50"
                               >
+                                <img
+                                  src={`${BASE}/abilities/${abilId}.png`}
+                                  alt={abilityLabel(abilId)}
+                                  title={abilityLabel(abilId)}
+                                  width={24}
+                                  height={24}
+                                  style={{
+                                    imageRendering: 'pixelated',
+                                    display: 'block',
+                                    flexShrink: 0,
+                                  }}
+                                  onError={(e) => {
+                                    ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+                                  }}
+                                />
                                 <AbilityDots level={lvl} faded />
-                                <span className="line-through">{abilityLabel(abilId)}</span>
                               </li>
                             ),
                           )}
@@ -144,15 +157,25 @@ export default function PlayerCard({ player }: { player: Player }) {
                     ))}
                     {/* Abilities */}
                     {Object.keys(abilities).length > 0 && (
-                      <ul className="list-none mt-1.5 mb-0 p-0 flex flex-col gap-[.2rem]">
+                      <ul className="list-none mt-1.5 mb-0 p-0 flex flex-row flex-wrap gap-1.5">
                         {Object.entries(abilities).map(([abilId, lvl]) => (
-                          <li
-                            key={abilId}
-                            className="flex items-center gap-2 text-zinc-400"
-                            style={{ fontSize: '.7rem' }}
-                          >
+                          <li key={abilId} className="flex flex-col items-center gap-[3px]">
+                            <img
+                              src={`${BASE}/abilities/${abilId}.png`}
+                              alt={abilityLabel(abilId)}
+                              title={abilityLabel(abilId)}
+                              width={24}
+                              height={24}
+                              style={{
+                                imageRendering: 'pixelated',
+                                display: 'block',
+                                flexShrink: 0,
+                              }}
+                              onError={(e) => {
+                                ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+                              }}
+                            />
                             <AbilityDots level={lvl} />
-                            <span>{abilityLabel(abilId)}</span>
                           </li>
                         ))}
                       </ul>
