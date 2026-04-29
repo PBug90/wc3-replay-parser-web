@@ -14,7 +14,7 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
 
 type Player = ParserOutput['players'][number]
 
-export default function PlayerCard({ player }: { player: Player }) {
+export default function PlayerCard({ player, winner }: { player: Player; winner?: boolean }) {
   const colorHex = player.color
   const race: string = player.race ?? player.raceDetected ?? ''
   const apm: number = player.apm ?? 0
@@ -39,9 +39,14 @@ export default function PlayerCard({ player }: { player: Player }) {
       className="overflow-hidden"
       style={{
         background: 'var(--surface)',
-        border: '2px solid var(--border-hi)',
+        border: winner === true
+          ? '2px solid rgba(200,160,80,0.7)'
+          : '2px solid var(--border-hi)',
         borderLeft: `4px solid ${colorHex}`,
-        boxShadow: `0 4px 20px rgba(0,0,0,0.5), 4px 0 0 ${colorHex}22`,
+        boxShadow: winner === true
+          ? `0 4px 30px rgba(0,0,0,0.5), 4px 0 0 ${colorHex}22, 0 0 24px rgba(200,160,80,0.15)`
+          : `0 4px 20px rgba(0,0,0,0.5), 4px 0 0 ${colorHex}22`,
+        opacity: winner === false ? 0.65 : 1,
         /* Corner brackets in player color */
         backgroundImage: `
           linear-gradient(to right, ${colorHex}44, ${colorHex}44) top right / 10px 1px no-repeat,
@@ -73,6 +78,21 @@ export default function PlayerCard({ player }: { player: Player }) {
               style={{ fontSize: '.65rem', color: 'var(--gold)', letterSpacing: '.04em' }}
             >
               {apm} APM
+            </span>
+          )}
+          {winner === true && (
+            <span
+              className="font-display"
+              style={{
+                fontSize: '.5rem',
+                letterSpacing: '.2em',
+                color: 'var(--gold)',
+                border: '1px solid rgba(200,160,80,0.5)',
+                padding: '2px 5px',
+                background: 'rgba(200,160,80,0.08)',
+              }}
+            >
+              VICTOR
             </span>
           )}
         </div>

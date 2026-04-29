@@ -50,6 +50,14 @@ export default function ReplayView({ replay, actions, buildings, fileName }: Rep
     teams[tid].push(p)
   }
 
+  const teamIds = Object.keys(teams)
+  const is1on1 =
+    teamIds.length === 2 && Object.values(teams).every((t) => t.length === 1)
+  const winningTeamId =
+    is1on1 && typeof replay.winningTeamId === 'number' && replay.winningTeamId >= 0
+      ? replay.winningTeamId
+      : null
+
   const playerIdColorMap: Record<number, string> = {}
   for (const p of players) playerIdColorMap[p.id] = p.color
 
@@ -109,6 +117,8 @@ export default function ReplayView({ replay, actions, buildings, fileName }: Rep
             // Side-by-side layout for 2-team games (1v1, 2v2, 3v3, 4v4)
             (() => {
               const [[tid0, t0players], [tid1, t1players]] = Object.entries(teams)
+              const t0won = winningTeamId !== null ? Number(tid0) === winningTeamId : undefined
+              const t1won = winningTeamId !== null ? Number(tid1) === winningTeamId : undefined
               return (
                 <div
                   className="grid items-start"
@@ -124,7 +134,7 @@ export default function ReplayView({ replay, actions, buildings, fileName }: Rep
                     </span>
                     <div className="flex flex-col gap-4">
                       {t0players.map((player) => (
-                        <PlayerCard key={player.id ?? player.name} player={player} />
+                        <PlayerCard key={player.id ?? player.name} player={player} winner={t0won} />
                       ))}
                     </div>
                   </div>
@@ -169,7 +179,7 @@ export default function ReplayView({ replay, actions, buildings, fileName }: Rep
                     </span>
                     <div className="flex flex-col gap-4">
                       {t1players.map((player) => (
-                        <PlayerCard key={player.id ?? player.name} player={player} />
+                        <PlayerCard key={player.id ?? player.name} player={player} winner={t1won} />
                       ))}
                     </div>
                   </div>
