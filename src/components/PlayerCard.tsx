@@ -39,13 +39,12 @@ export default function PlayerCard({ player, winner }: { player: Player; winner?
       className="overflow-hidden"
       style={{
         background: 'var(--surface)',
-        border: winner === true
-          ? '2px solid rgba(200,160,80,0.7)'
-          : '2px solid var(--border-hi)',
+        border: winner === true ? '2px solid rgba(200,160,80,0.7)' : '2px solid var(--border-hi)',
         borderLeft: `4px solid ${colorHex}`,
-        boxShadow: winner === true
-          ? `0 4px 30px rgba(0,0,0,0.5), 4px 0 0 ${colorHex}22, 0 0 24px rgba(200,160,80,0.15)`
-          : `0 4px 20px rgba(0,0,0,0.5), 4px 0 0 ${colorHex}22`,
+        boxShadow:
+          winner === true
+            ? `0 4px 30px rgba(0,0,0,0.5), 4px 0 0 ${colorHex}22, 0 0 24px rgba(200,160,80,0.15)`
+            : `0 4px 20px rgba(0,0,0,0.5), 4px 0 0 ${colorHex}22`,
         opacity: winner === false ? 0.65 : 1,
         /* Corner brackets in player color */
         backgroundImage: `

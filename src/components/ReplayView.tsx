@@ -51,8 +51,7 @@ export default function ReplayView({ replay, actions, buildings, fileName }: Rep
   }
 
   const teamIds = Object.keys(teams)
-  const is1on1 =
-    teamIds.length === 2 && Object.values(teams).every((t) => t.length === 1)
+  const is1on1 = teamIds.length === 2 && Object.values(teams).every((t) => t.length === 1)
   const winningTeamId =
     is1on1 && typeof replay.winningTeamId === 'number' && replay.winningTeamId >= 0
       ? replay.winningTeamId
