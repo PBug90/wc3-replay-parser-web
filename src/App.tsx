@@ -6,13 +6,15 @@ import ReplayView from './components/ReplayView'
 import W3CMatchBrowser from './components/W3CMatchBrowser'
 import CompareView from './components/CompareView'
 import MagicPoof from './components/MagicPoof'
+import MemoryGameView from './components/MemoryGameView'
 
-type Tab = 'upload' | 'w3c' | 'compare'
+type Tab = 'upload' | 'w3c' | 'compare' | 'memory'
 
 const TAB_LABELS: Record<Tab, string> = {
   upload: 'Load Replay',
   w3c: 'W3Champions',
   compare: 'Replay Comparison',
+  memory: 'Observer API Data Visualizer',
 }
 
 export default function App() {
@@ -169,6 +171,7 @@ export default function App() {
             <DropZone loading={loading} fileName={fileName} onFile={parseFile} onUrl={parseUrl} />
           )}
           {tab === 'w3c' && <W3CMatchBrowser loading={loading} onBuffer={parseBuffer} />}
+          {tab === 'memory' && <MemoryGameView />}
           {tab === 'compare' && !showCompareResults && (
             <div className="flex gap-6">
               <div className="flex-1 flex flex-col gap-3">
