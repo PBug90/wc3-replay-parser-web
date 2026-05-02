@@ -1,4 +1,7 @@
 import { useState, useRef } from 'react'
+import { WORKERS, HERO_ICON, HERO_OBSERVER, UNIT_SUPPLY, UNIT_ICON_ID } from '../wc3data'
+
+const HERO_OBSERVER_NAMES = new Set(Object.keys(HERO_OBSERVER))
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
 const PLAYER_COLORS = ['#58a6ff', '#ff7b72', '#3fb950', '#d2a8ff', '#ffa657']
@@ -19,177 +22,6 @@ const UNIT_COLORS = [
   '#a5d6ff',
   '#c9e0a0',
 ]
-const WORKERS = new Set(['Peasant', 'Peon', 'Wisp', 'Acolyte'])
-
-const HERO_ICON: Record<string, string> = {
-  Archmage: 'Hamg',
-  'Mountain King': 'Hmkg',
-  Paladin: 'Hpal',
-  'Blood Mage': 'Hblm',
-  Blademaster: 'Obla',
-  'Far Seer': 'Ofar',
-  'Shadow Hunter': 'Oshd',
-  'Tauren Chieftain': 'Otch',
-  'Death Knight': 'Udea',
-  Dreadlord: 'Udre',
-  Lich: 'Ulic',
-  'Crypt Lord': 'Ucrl',
-  'Demon Hunter': 'Edem',
-  'Keeper of the Grove': 'Ekee',
-  'Priestess of the Moon': 'Emoo',
-  Warden: 'Ewar',
-  Alchemist: 'Nalc',
-  Beastmaster: 'Nbst',
-  'Fire Lord': 'Nfir',
-  'Naga Sea Witch': 'Nngs',
-  'Pandaren Brewmaster': 'Npbm',
-  'Pit Lord': 'Nplh',
-  Tinker: 'Ntin',
-}
-
-// Observer hero name (lowercase, no spaces) → icon ID + display name. All heroes cost 5 food.
-const HERO_OBSERVER: Record<string, { icon: string; display: string }> = {
-  archmage: { icon: 'Hamg', display: 'Archmage' },
-  mountainking: { icon: 'Hmkg', display: 'Mountain King' },
-  paladin: { icon: 'Hpal', display: 'Paladin' },
-  bloodmage: { icon: 'Hblm', display: 'Blood Mage' },
-  blademaster: { icon: 'Obla', display: 'Blademaster' },
-  farseer: { icon: 'Ofar', display: 'Far Seer' },
-  shadowhunter: { icon: 'Oshd', display: 'Shadow Hunter' },
-  taurenchieftain: { icon: 'Otch', display: 'Tauren Chieftain' },
-  deathknight: { icon: 'Udea', display: 'Death Knight' },
-  dreadlord: { icon: 'Udre', display: 'Dreadlord' },
-  lich: { icon: 'Ulic', display: 'Lich' },
-  cryptlord: { icon: 'Ucrl', display: 'Crypt Lord' },
-  demonhunter: { icon: 'Edem', display: 'Demon Hunter' },
-  keeperofthegrove: { icon: 'Ekee', display: 'Keeper of the Grove' },
-  priestessofthemoon: { icon: 'Emoo', display: 'Priestess of the Moon' },
-  warden: { icon: 'Ewar', display: 'Warden' },
-  alchemist: { icon: 'Nalc', display: 'Alchemist' },
-  beastmaster: { icon: 'Nbst', display: 'Beastmaster' },
-  firelord: { icon: 'Nfir', display: 'Fire Lord' },
-  seawitch: { icon: 'Nngs', display: 'Naga Sea Witch' },
-  pandarenbrewmaster: { icon: 'Npbm', display: 'Pandaren Brewmaster' },
-  pitlord: { icon: 'Nplh', display: 'Pit Lord' },
-  tinker: { icon: 'Ntin', display: 'Tinker' },
-}
-const HERO_OBSERVER_NAMES = new Set(Object.keys(HERO_OBSERVER))
-
-// Unit food/supply cost (from warcraft.wiki.gg). Default 1 for unknowns.
-const UNIT_SUPPLY: Record<string, number> = {
-  // Human
-  Peasant: 1,
-  Militia: 1,
-  Footman: 2,
-  Priest: 2,
-  Sorceress: 2,
-  'Flying Machine': 1,
-  Rifleman: 3,
-  'Mortar Team': 3,
-  Spellbreaker: 3,
-  'Dragonhawk Rider': 3,
-  Knight: 4,
-  'Siege Engine': 4,
-  'Gryphon Rider': 4,
-  // Orc
-  Peon: 1,
-  'Troll Headhunter': 2,
-  'Troll Berserker': 2,
-  Shaman: 2,
-  'Troll Witch Doctor': 2,
-  'Troll Batrider': 2,
-  Grunt: 3,
-  Raider: 3,
-  'Spirit Walker': 3,
-  Demolisher: 4,
-  'Kodo Beast': 4,
-  'Wind Rider': 4,
-  Tauren: 5,
-  Shredder: 4,
-  // Undead
-  Acolyte: 1,
-  Shade: 1,
-  Ghoul: 2,
-  Gargoyle: 2,
-  Banshee: 2,
-  Necromancer: 2,
-  'Crypt Fiend': 3,
-  'Obsidian Statue': 3,
-  Abomination: 4,
-  'Meat Wagon': 4,
-  Destroyer: 5,
-  'Frost Wyrm': 7,
-  // Night Elf
-  'Sentry Ward': 0,
-  Wisp: 1,
-  Archer: 2,
-  'Druid of the Talon': 2,
-  Hippogryph: 2,
-  'Faerie Dragon': 2,
-  Huntress: 3,
-  Dryad: 3,
-  'Glaive Thrower': 3,
-  'Druid of the Claw': 4,
-  Chimaera: 5,
-  'Mountain Giant': 7,
-}
-
-// Unit display name → WC3 4-char ID (matches public/units/{id}.png)
-const UNIT_ICON_ID: Record<string, string> = {
-  // Human
-  Footman: 'hfoo',
-  Knight: 'hkni',
-  Priest: 'hmpr',
-  'Mortar Team': 'hmtm',
-  Peasant: 'hpea',
-  Militia: 'hmil',
-  Rifleman: 'hrif',
-  Sorceress: 'hsor',
-  'Siege Engine': 'hmtt',
-  'Gryphon Rider': 'hgry',
-  'Flying Machine': 'hgyr',
-  Spellbreaker: 'hspt',
-  'Dragonhawk Rider': 'hdhw',
-  // Night Elf
-  'Glaive Thrower': 'ebal',
-  Chimaera: 'echm',
-  'Druid of the Claw': 'edoc',
-  'Druid of the Talon': 'edot',
-  Wisp: 'ewsp',
-  Huntress: 'esen',
-  Archer: 'earc',
-  Dryad: 'edry',
-  Hippogryph: 'ehip',
-  'Mountain Giant': 'emtg',
-  'Faerie Dragon': 'efdr',
-  // Orc
-  Demolisher: 'ocat',
-  'Troll Witch Doctor': 'odoc',
-  Grunt: 'ogru',
-  'Troll Headhunter': 'ohun',
-  'Troll Berserker': 'otbk',
-  'Kodo Beast': 'okod',
-  Peon: 'opeo',
-  Raider: 'orai',
-  Shaman: 'oshm',
-  Tauren: 'otau',
-  'Wind Rider': 'owyv',
-  'Spirit Walker': 'ospw',
-  'Troll Batrider': 'otbr',
-  // Undead
-  Acolyte: 'uaco',
-  Abomination: 'uabo',
-  Banshee: 'uban',
-  'Crypt Fiend': 'ucry',
-  'Frost Wyrm': 'ufro',
-  Gargoyle: 'ugar',
-  Ghoul: 'ugho',
-  Necromancer: 'unec',
-  Meatwagon: 'umtw',
-  Shade: 'ushd',
-  'Obsidian Statue': 'uobs',
-  Destroyer: 'ubsp',
-}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -372,7 +204,8 @@ function buildByTime(samples: Sample[]) {
 }
 
 /** Compute stacked SVG paths (closed areas) for a set of layers + samples.
- *  `weight` maps unit name → supply cost; defaults to 1 if omitted. */
+ *  `weight` maps unit name → supply cost; defaults to 1 if omitted.
+ *  `colorOf` maps unit name → fill color; defaults to cycling UNIT_COLORS by index. */
 function buildAreas(
   samples: Sample[],
   layers: string[],
@@ -380,6 +213,7 @@ function buildAreas(
   xOf: (t: number) => number,
   yOf: (v: number) => number,
   weight: (name: string) => number = () => 1,
+  colorOf: (name: string, idx: number) => string = (_, i) => UNIT_COLORS[i % UNIT_COLORS.length],
 ) {
   return layers.map((name, li) => {
     const topPts = samples.map((_, si) => {
@@ -399,7 +233,7 @@ function buildAreas(
       .reverse()
       .map(([x, y]) => `L${x.toFixed(1)},${y.toFixed(1)}`)
       .join(' ')
-    return { name, d: `${fwd} ${bwd} Z`, fill: UNIT_COLORS[li % UNIT_COLORS.length] }
+    return { name, d: `${fwd} ${bwd} Z`, fill: colorOf(name, li) }
   })
 }
 
@@ -549,20 +383,39 @@ function UnitIconRow({ fill, name, count }: { fill: string; name: string; count:
 // Economy chart
 // ---------------------------------------------------------------------------
 
-function EconomyChart({ players }: { players: ChartPlayer[] }) {
+interface ResourceSeries {
+  mined: (s: Sample) => number
+  upkeep: (s: Sample) => number
+  netLabel: string
+  minedLabel: string
+  upkeepLabel: string
+}
+
+function ResourceChart({
+  players,
+  title,
+  series,
+  yStep,
+  singleLine = false,
+}: {
+  players: ChartPlayer[]
+  title: string
+  series: ResourceSeries
+  yStep: number
+  singleLine?: boolean
+}) {
   const { hover, wrapRef, onSvgMouseMove, onSvgMouseLeave } = useChartHover()
 
   if (players.every((p) => p.samples.length === 0)) return null
   const maxTime = Math.max(...players.flatMap((p) => p.samples.map((s) => s.time_ms))) / 1000
-  const rawMax = Math.max(...players.flatMap((p) => p.samples.map((s) => s.gold_mined)), 1)
-  const goldStep = rawMax > 10000 ? 5000 : rawMax > 4000 ? 2000 : 1000
-  const yMax = niceMax(rawMax, goldStep)
+  const rawMax = Math.max(...players.flatMap((p) => p.samples.map((s) => series.mined(s))), 1)
+  const yMax = niceMax(rawMax, yStep)
 
   const xOf = (t: number) => (t / maxTime) * IW
   const yOf = (v: number) => IH - (v / yMax) * IH
 
-  const goldTicks: number[] = []
-  for (let v = 0; v <= yMax; v += goldStep) goldTicks.push(v)
+  const yTicks: number[] = []
+  for (let v = 0; v <= yMax; v += yStep) yTicks.push(v)
 
   const path = (pts: Array<[number, number]>) =>
     pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
@@ -571,7 +424,7 @@ function EconomyChart({ players }: { players: ChartPlayer[] }) {
 
   return (
     <div ref={wrapRef} className="flex flex-col gap-3" style={{ position: 'relative' }}>
-      <span className="section-label">Economy — Gold</span>
+      <span className="section-label">{title}</span>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
@@ -581,7 +434,7 @@ function EconomyChart({ players }: { players: ChartPlayer[] }) {
         style={{ cursor: 'crosshair' }}
       >
         <g transform={`translate(${CM.left},${CM.top})`}>
-          {goldTicks.map((v) => (
+          {yTicks.map((v) => (
             <g key={v}>
               <line x1={0} y1={yOf(v)} x2={IW} y2={yOf(v)} stroke="#1e1e26" strokeWidth={1} />
               <text
@@ -612,18 +465,22 @@ function EconomyChart({ players }: { players: ChartPlayer[] }) {
           ))}
           {players.map(({ color, samples }) => {
             const mp = samples.map(
-              (s) => [xOf(s.time_ms / 1000), yOf(s.gold_mined)] as [number, number],
+              (s) => [xOf(s.time_ms / 1000), yOf(series.mined(s))] as [number, number],
             )
-            const up = samples.map(
-              (s) => [xOf(s.time_ms / 1000), yOf(s.gold_upkeep_lost)] as [number, number],
-            )
-            const np = samples.map(
-              (s) =>
-                [xOf(s.time_ms / 1000), yOf(Math.max(0, s.gold_mined - s.gold_upkeep_lost))] as [
-                  number,
-                  number,
-                ],
-            )
+            const up = singleLine
+              ? null
+              : samples.map(
+                  (s) => [xOf(s.time_ms / 1000), yOf(series.upkeep(s))] as [number, number],
+                )
+            const np = singleLine
+              ? null
+              : samples.map(
+                  (s) =>
+                    [
+                      xOf(s.time_ms / 1000),
+                      yOf(Math.max(0, series.mined(s) - series.upkeep(s))),
+                    ] as [number, number],
+                )
             return (
               <g key={color}>
                 <path
@@ -633,24 +490,28 @@ function EconomyChart({ players }: { players: ChartPlayer[] }) {
                   strokeWidth={1.5}
                   strokeLinejoin="round"
                 />
-                <path
-                  d={path(up)}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={1}
-                  strokeDasharray="6 3"
-                  strokeLinejoin="round"
-                  opacity={0.7}
-                />
-                <path
-                  d={path(np)}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={1}
-                  strokeDasharray="2 2"
-                  strokeLinejoin="round"
-                  opacity={0.85}
-                />
+                {up && (
+                  <path
+                    d={path(up)}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={1}
+                    strokeDasharray="6 3"
+                    strokeLinejoin="round"
+                    opacity={0.7}
+                  />
+                )}
+                {np && (
+                  <path
+                    d={path(np)}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={1}
+                    strokeDasharray="2 2"
+                    strokeLinejoin="round"
+                    opacity={0.85}
+                  />
+                )}
               </g>
             )
           })}
@@ -675,6 +536,8 @@ function EconomyChart({ players }: { players: ChartPlayer[] }) {
           {players.map((p) => {
             const s = nearestSample(p.samples, hoverSec)
             if (!s) return null
+            const mined = series.mined(s)
+            const upkeep = series.upkeep(s)
             return (
               <div key={p.name} style={{ marginBottom: 6 }}>
                 <span
@@ -688,12 +551,13 @@ function EconomyChart({ players }: { players: ChartPlayer[] }) {
                 >
                   {p.name}
                 </span>
-                {(
-                  [
-                    ['mined', s.gold_mined],
-                    ['upkeep', s.gold_upkeep_lost],
-                    ['net', s.gold_mined - s.gold_upkeep_lost],
-                  ] as [string, number][]
+                {(singleLine
+                  ? ([[series.minedLabel, mined]] as [string, number][])
+                  : ([
+                      [series.minedLabel, mined],
+                      [series.upkeepLabel, upkeep],
+                      [series.netLabel, mined - upkeep],
+                    ] as [string, number][])
                 ).map(([label, val]) => (
                   <div
                     key={label}
@@ -719,12 +583,16 @@ function EconomyChart({ players }: { players: ChartPlayer[] }) {
             >
               {name}
             </span>
-            {(
-              [
-                { label: 'mined', dash: undefined },
-                { label: 'upkeep lost', dash: '6 3' },
-                { label: 'net gold', dash: '2 2' },
-              ] as { label: string; dash?: string }[]
+            {(singleLine
+              ? ([{ label: series.minedLabel, dash: undefined }] as {
+                  label: string
+                  dash?: string
+                }[])
+              : ([
+                  { label: series.minedLabel, dash: undefined },
+                  { label: series.upkeepLabel, dash: '6 3' },
+                  { label: series.netLabel, dash: '2 2' },
+                ] as { label: string; dash?: string }[])
             ).map(({ label, dash }) => (
               <span
                 key={label}
@@ -752,135 +620,42 @@ function EconomyChart({ players }: { players: ChartPlayer[] }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// APM chart
-// ---------------------------------------------------------------------------
-
-function ApmChart({ players }: { players: ChartPlayer[] }) {
-  const { hover, wrapRef, onSvgMouseMove, onSvgMouseLeave } = useChartHover()
-
-  if (players.every((p) => p.samples.length === 0)) return null
-  const maxTime = Math.max(...players.flatMap((p) => p.samples.map((s) => s.time_ms))) / 1000
-  const rawMax = Math.max(...players.flatMap((p) => p.samples.map((s) => s.apm)), 1)
-  const yMax = niceMax(rawMax, 50)
-
-  const xOf = (t: number) => (t / maxTime) * IW
-  const yOf = (v: number) => IH - (v / yMax) * IH
-
-  const yTicks: number[] = []
-  for (let v = 0; v <= yMax; v += 50) yTicks.push(v)
-
-  const hoverSec = hover ? hover.fraction * maxTime : null
-
+function EconomyChart({ players }: { players: ChartPlayer[] }) {
+  const rawMax = Math.max(...players.flatMap((p) => p.samples.map((s) => s.gold_mined)), 1)
+  const step = rawMax > 10000 ? 5000 : rawMax > 4000 ? 2000 : 1000
   return (
-    <div ref={wrapRef} className="flex flex-col gap-3" style={{ position: 'relative' }}>
-      <span className="section-label">APM</span>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        width="100%"
-        className="overflow-visible"
-        onMouseMove={onSvgMouseMove}
-        onMouseLeave={onSvgMouseLeave}
-        style={{ cursor: 'crosshair' }}
-      >
-        <g transform={`translate(${CM.left},${CM.top})`}>
-          {yTicks.map((v) => (
-            <g key={v}>
-              <line x1={0} y1={yOf(v)} x2={IW} y2={yOf(v)} stroke="#1e1e26" strokeWidth={1} />
-              <text
-                x={-6}
-                y={yOf(v)}
-                textAnchor="end"
-                dominantBaseline="middle"
-                fontSize={9}
-                fill="#46464f"
-                fontFamily="'JetBrains Mono', monospace"
-              >
-                {v}
-              </text>
-            </g>
-          ))}
-          {timeTicks(maxTime).map((t) => (
-            <text
-              key={t}
-              x={xOf(t)}
-              y={IH + 16}
-              textAnchor="middle"
-              fontSize={9}
-              fill="#46464f"
-              fontFamily="'JetBrains Mono', monospace"
-            >
-              {Math.floor(t / 60)}m
-            </text>
-          ))}
-          {players.map(({ color, samples }) => (
-            <path
-              key={color}
-              d={samples
-                .map(
-                  (s, i) =>
-                    `${i === 0 ? 'M' : 'L'}${xOf(s.time_ms / 1000).toFixed(1)},${yOf(s.apm).toFixed(1)}`,
-                )
-                .join(' ')}
-              fill="none"
-              stroke={color}
-              strokeWidth={1.5}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-          ))}
-          {hover && (
-            <line
-              x1={hover.fraction * IW}
-              y1={0}
-              x2={hover.fraction * IW}
-              y2={IH}
-              stroke="rgba(200,160,80,0.4)"
-              strokeWidth={1}
-              pointerEvents="none"
-            />
-          )}
-          <rect x={0} y={0} width={IW} height={IH} fill="transparent" />
-        </g>
-      </svg>
+    <ResourceChart
+      players={players}
+      title="Economy — Gold"
+      yStep={step}
+      series={{
+        mined: (s) => s.gold_mined,
+        upkeep: (s) => s.gold_upkeep_lost,
+        minedLabel: 'mined',
+        upkeepLabel: 'upkeep',
+        netLabel: 'net gold',
+      }}
+    />
+  )
+}
 
-      {hover && hoverSec !== null && (
-        <ChartTooltip hover={hover}>
-          <TooltipTime sec={hoverSec} />
-          {players.map((p) => {
-            const s = nearestSample(p.samples, hoverSec)
-            if (!s) return null
-            return (
-              <div key={p.name} className="flex justify-between gap-4" style={{ marginBottom: 2 }}>
-                <span
-                  style={{ fontSize: '.62rem', color: p.color, fontFamily: "'Outfit', sans-serif" }}
-                >
-                  {p.name}
-                </span>
-                <span className="font-mono text-foreground" style={{ fontSize: '.6rem' }}>
-                  {s.apm} APM
-                </span>
-              </div>
-            )
-          })}
-        </ChartTooltip>
-      )}
-
-      <div className="flex flex-wrap gap-5">
-        {players.map(({ name, color }) => (
-          <span
-            key={name}
-            className="flex items-center gap-2 text-zinc-400"
-            style={{ fontSize: '.7rem', fontFamily: "'Outfit', sans-serif" }}
-          >
-            <svg width={16} height={2} className="flex-shrink-0">
-              <line x1={0} y1={1} x2={16} y2={1} stroke={color} strokeWidth={2} />
-            </svg>
-            {name}
-          </span>
-        ))}
-      </div>
-    </div>
+function LumberChart({ players }: { players: ChartPlayer[] }) {
+  const rawMax = Math.max(...players.flatMap((p) => p.samples.map((s) => s.lumber_mined)), 1)
+  const step = rawMax > 5000 ? 2000 : rawMax > 2000 ? 1000 : 500
+  return (
+    <ResourceChart
+      players={players}
+      title="Economy — Lumber"
+      yStep={step}
+      singleLine
+      series={{
+        mined: (s) => s.lumber_mined,
+        upkeep: () => 0,
+        minedLabel: 'mined',
+        upkeepLabel: '',
+        netLabel: '',
+      }}
+    />
   )
 }
 
@@ -1120,8 +895,14 @@ function CombinedArmyChart({ players }: { players: ChartPlayer[] }) {
   const yOf_up = (v: number) => center - (v / yMax) * center
   const yOf_dn = (v: number) => center + (v / yMax) * center
 
-  const areas1 = buildAreas(p1.samples, layers1, byTime1, xOf, yOf_up, supply)
-  const areas2 = buildAreas(p2.samples, layers2, byTime2, xOf, yOf_dn, supply)
+  const allUnitNames = [...new Set([...layers1, ...layers2])]
+  const sharedColorMap = Object.fromEntries(
+    allUnitNames.map((name, i) => [name, UNIT_COLORS[i % UNIT_COLORS.length]]),
+  )
+  const colorOf = (name: string) => sharedColorMap[name] ?? UNIT_COLORS[0]
+
+  const areas1 = buildAreas(p1.samples, layers1, byTime1, xOf, yOf_up, supply, colorOf)
+  const areas2 = buildAreas(p2.samples, layers2, byTime2, xOf, yOf_dn, supply, colorOf)
 
   const yTicks: number[] = []
   for (let v = yStep; v <= yMax; v += yStep) yTicks.push(v)
@@ -1426,162 +1207,19 @@ function CombinedArmyChart({ players }: { players: ChartPlayer[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Per-player unit composition chart (stacked area)
-// ---------------------------------------------------------------------------
-
-function UnitCompositionChart({ player }: { player: ChartPlayer }) {
-  const { hover, wrapRef, onSvgMouseMove, onSvgMouseLeave } = useChartHover()
-
-  const { samples, color } = player
-  if (samples.length === 0) return null
-
-  const layers = buildLayers(samples)
-  if (layers.length === 0) return null
-  const byTime = buildByTime(samples)
-
-  const supply = heroSupply
-  const maxStack = Math.max(
-    ...samples.map((_, si) => layers.reduce((sum, n) => sum + (byTime[si][n] ?? 0) * supply(n), 0)),
-    1,
-  )
-  const yStep = maxStack > 60 ? 20 : maxStack > 30 ? 10 : 5
-  const yMax = niceMax(maxStack, yStep)
-  const maxTime = samples[samples.length - 1].time_ms / 1000
-
-  const xOf = (t: number) => (t / maxTime) * IW
-  const yOf = (v: number) => IH - (v / yMax) * IH
-
-  const areas = buildAreas(samples, layers, byTime, xOf, yOf, supply)
-
-  const yTicks: number[] = []
-  for (let v = 0; v <= yMax; v += yStep) yTicks.push(v)
-
-  const hoverSec = hover ? hover.fraction * maxTime : null
-  const hoverIdx = hoverSec !== null ? nearestSampleIdx(samples, hoverSec) : null
-
-  return (
-    <div ref={wrapRef} className="flex flex-col gap-3" style={{ position: 'relative' }}>
-      <span className="section-label" style={{ color }}>
-        Army composition
-      </span>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        width="100%"
-        className="overflow-visible"
-        onMouseMove={onSvgMouseMove}
-        onMouseLeave={onSvgMouseLeave}
-        style={{ cursor: 'crosshair' }}
-      >
-        <g transform={`translate(${CM.left},${CM.top})`}>
-          {yTicks.map((v) => (
-            <g key={v}>
-              <line x1={0} y1={yOf(v)} x2={IW} y2={yOf(v)} stroke="#1e1e26" strokeWidth={1} />
-              <text
-                x={-6}
-                y={yOf(v)}
-                textAnchor="end"
-                dominantBaseline="middle"
-                fontSize={9}
-                fill="#46464f"
-                fontFamily="'JetBrains Mono', monospace"
-              >
-                {v}
-              </text>
-            </g>
-          ))}
-          {timeTicks(maxTime).map((t) => (
-            <text
-              key={t}
-              x={xOf(t)}
-              y={IH + 16}
-              textAnchor="middle"
-              fontSize={9}
-              fill="#46464f"
-              fontFamily="'JetBrains Mono', monospace"
-            >
-              {Math.floor(t / 60)}m
-            </text>
-          ))}
-          {areas.map(({ name, d, fill }) => (
-            <path key={name} d={d} fill={fill} opacity={0.75} stroke={fill} strokeWidth={0.5} />
-          ))}
-          {hover && (
-            <line
-              x1={hover.fraction * IW}
-              y1={0}
-              x2={hover.fraction * IW}
-              y2={IH}
-              stroke="rgba(200,160,80,0.5)"
-              strokeWidth={1}
-              pointerEvents="none"
-            />
-          )}
-          <rect x={0} y={0} width={IW} height={IH} fill="transparent" />
-        </g>
-      </svg>
-
-      {hover && hoverIdx !== null && (
-        <ChartTooltip hover={hover}>
-          <TooltipTime sec={samples[hoverIdx].time_ms / 1000} />
-          {[...areas].reverse().map(({ name, fill }) => {
-            const count = byTime[hoverIdx][name] ?? 0
-            if (count === 0) return null
-            return <UnitIconRow key={name} fill={fill} name={name} count={count} />
-          })}
-          {(() => {
-            const total = areas.reduce(
-              (s, { name }) => s + (byTime[hoverIdx][name] ?? 0) * heroSupply(name),
-              0,
-            )
-            return (
-              <div
-                className="flex justify-between font-mono"
-                style={{
-                  fontSize: '.6rem',
-                  marginTop: 4,
-                  paddingTop: 4,
-                  borderTop: '1px solid var(--border)',
-                }}
-              >
-                <span style={{ color: '#46464f' }}>total food</span>
-                <span className="text-foreground">{total}</span>
-              </div>
-            )
-          })()}
-        </ChartTooltip>
-      )}
-
-      <div className="flex flex-wrap gap-x-4 gap-y-1">
-        {[...areas].reverse().map(({ name, fill }) => (
-          <span
-            key={name}
-            className="flex items-center gap-1.5"
-            style={{ fontSize: '.62rem', fontFamily: "'Outfit', sans-serif", color: '#8b8b99' }}
-          >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 2,
-                background: fill,
-                display: 'inline-block',
-                flexShrink: 0,
-              }}
-            />
-            {name}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Hero icon
 // ---------------------------------------------------------------------------
 
+function resolveHeroIconId(name: string): string | null {
+  return HERO_ICON[name] ?? HERO_OBSERVER[name.toLowerCase().replace(/\s+/g, '')]?.icon ?? null
+}
+
+function resolveHeroDisplayName(name: string): string {
+  return HERO_OBSERVER[name.toLowerCase().replace(/\s+/g, '')]?.display ?? name
+}
+
 function HeroIcon({ name, size = 36 }: { name: string; size?: number }) {
-  const id = HERO_ICON[name]
+  const id = resolveHeroIconId(name)
   if (!id) {
     return (
       <div
@@ -1604,150 +1242,11 @@ function HeroIcon({ name, size = 36 }: { name: string; size?: number }) {
         title={name}
         width={size}
         height={size}
-        style={{ display: 'block', imageRendering: 'pixelated' }}
+        style={{ display: 'block', imageRendering: 'pixelated', width: '100%', height: '100%' }}
         onError={(e) => {
           ;(e.currentTarget as HTMLImageElement).style.display = 'none'
         }}
       />
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Player section
-// ---------------------------------------------------------------------------
-
-function PlayerSection({ player }: { player: ChartPlayer }) {
-  const { color } = player
-  const isWinner = player.result === 'Victory'
-  return (
-    <div
-      className="overflow-hidden"
-      style={{
-        background: 'var(--surface)',
-        border: isWinner ? '2px solid rgba(200,160,80,0.5)' : '2px solid var(--border-hi)',
-        borderLeft: `4px solid ${color}`,
-        boxShadow: isWinner
-          ? `0 4px 30px rgba(0,0,0,0.5), 4px 0 0 ${color}22, 0 0 24px rgba(200,160,80,0.15)`
-          : `0 4px 20px rgba(0,0,0,0.5), 4px 0 0 ${color}22`,
-        opacity: player.result === 'Defeat' ? 0.65 : 1,
-      }}
-    >
-      <div
-        className="flex items-center gap-2.5 px-4 py-3"
-        style={{ borderBottom: '1px solid var(--border)' }}
-      >
-        <span
-          className="rounded-full flex-shrink-0"
-          style={{ width: 8, height: 8, background: color, boxShadow: `0 0 6px ${color}88` }}
-        />
-        <span
-          className="font-display text-foreground flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
-          style={{ fontSize: '.85rem', letterSpacing: '.04em' }}
-        >
-          {player.name}
-        </span>
-        <div className="flex gap-3 flex-shrink-0 items-center">
-          {player.race && <span className="race-badge text-muted">{player.race}</span>}
-          <span className="font-mono text-muted" style={{ fontSize: '.65rem' }}>
-            Team {player.team + 1}
-          </span>
-          {isWinner && (
-            <span
-              className="font-display"
-              style={{
-                fontSize: '.5rem',
-                letterSpacing: '.2em',
-                color: 'var(--gold)',
-                border: '1px solid rgba(200,160,80,0.5)',
-                padding: '2px 5px',
-                background: 'rgba(200,160,80,0.08)',
-              }}
-            >
-              VICTOR
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="px-4 py-3.5 flex flex-col gap-5">
-        {player.summary.heroes.length > 0 && (
-          <div className="flex flex-col gap-3">
-            <span className="section-label">Heroes</span>
-            {player.summary.heroes.map((hero, i) => (
-              <div key={i} className="flex gap-3 items-start">
-                <HeroIcon name={hero.name} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="font-medium text-foreground" style={{ fontSize: '.8rem' }}>
-                      {hero.name}
-                    </span>
-                    <span className="font-mono text-muted" style={{ fontSize: '.65rem' }}>
-                      lv {hero.level}
-                    </span>
-                    <span className="font-mono text-muted" style={{ fontSize: '.65rem' }}>
-                      {hero.xp.toLocaleString()} xp
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-x-5 gap-y-1">
-                    {(
-                      [
-                        ['Kills', hero.total_kills],
-                        ['Hero kills', hero.hero_kills],
-                        ['Bldg kills', hero.building_kills],
-                        ['Deaths', hero.deaths],
-                        ['Dmg dealt', hero.damage_dealt.toLocaleString()],
-                        ['Dmg recv', hero.damage_received.toLocaleString()],
-                        ['Healing', hero.healing_done.toLocaleString()],
-                        ...(hero.time_alive_ms > 0
-                          ? [['Time alive', formatDuration(hero.time_alive_ms)]]
-                          : []),
-                      ] as Array<[string, string | number]>
-                    ).map(([label, val]) => (
-                      <span key={label} className="flex gap-1.5 items-baseline">
-                        <span className="text-muted" style={{ fontSize: '.6rem' }}>
-                          {label}
-                        </span>
-                        <span className="font-mono text-foreground" style={{ fontSize: '.65rem' }}>
-                          {val}
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <UnitCompositionChart player={player} />
-
-        {player.summary.units.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <span className="section-label">Units trained</span>
-            <div className="flex flex-wrap gap-1.5">
-              {player.summary.units
-                .slice()
-                .sort((a, b) => b.trained - a.trained)
-                .map((u) => (
-                  <span
-                    key={u.name}
-                    className="flex items-center gap-1.5 px-2 py-1 bg-bg border border-border text-foreground"
-                    style={{ fontSize: '.7rem' }}
-                  >
-                    {u.name}
-                    <span className="text-muted">×{u.trained}</span>
-                    {u.alive > 0 && (
-                      <span className="text-muted" style={{ fontSize: '.6rem' }}>
-                        ({u.alive} alive)
-                      </span>
-                    )}
-                  </span>
-                ))}
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   )
 }
@@ -1791,6 +1290,19 @@ function DropZoneEmpty({ onFile, error }: { onFile: (f: File) => void; error: st
         <span className="font-mono text-muted" style={{ fontSize: '.6rem' }}>
           click to browse
         </span>
+        <span className="font-mono text-muted" style={{ fontSize: '.6rem', marginTop: '0.5rem' }}>
+          generate JSON with{' '}
+          <a
+            href="https://github.com/PBug90/magic-sentry"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#58a6ff', textDecoration: 'underline' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            Magic Sentry
+          </a>{' '}
+          via the Warcraft 3 Observer API
+        </span>
         <input
           ref={inputRef}
           type="file"
@@ -1822,9 +1334,30 @@ function DropZoneEmpty({ onFile, error }: { onFile: (f: File) => void; error: st
 // Main export
 // ---------------------------------------------------------------------------
 
+type ChartKey = 'economy' | 'lumber' | 'food' | 'army'
+
+const CHART_LABELS: Record<ChartKey, string> = {
+  economy: 'Gold',
+  lumber: 'Lumber',
+  food: 'Food',
+  army: 'Army',
+}
+
 export default function MemoryGameView() {
   const [game, setGame] = useState<GameRecord | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [visibleCharts, setVisibleCharts] = useState<Set<ChartKey>>(
+    new Set(['economy', 'lumber', 'food', 'army']),
+  )
+
+  function toggleChart(key: ChartKey) {
+    setVisibleCharts((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   function loadFile(file: File) {
     setError(null)
@@ -1881,6 +1414,93 @@ export default function MemoryGameView() {
         </span>
       </div>
 
+      {/* Heroes */}
+      {playerData.some((p) => p.summary.heroes.length > 0) && (
+        <div className="flex flex-col gap-4">
+          {playerData.map(
+            (player) =>
+              player.summary.heroes.length > 0 && (
+                <div key={player.name} className="flex flex-col gap-2">
+                  <span className="section-label" style={{ color: player.color }}>
+                    {player.name}
+                  </span>
+                  {[...player.summary.heroes].reverse().map((hero, i) => (
+                    <div
+                      key={i}
+                      className="flex gap-3 items-center px-3 py-2.5"
+                      style={{
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border-hi)',
+                        borderLeft: `3px solid ${player.color}`,
+                      }}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <HeroIcon name={hero.name} size={52} />
+                        <span
+                          className="font-mono absolute bottom-0 right-0"
+                          style={{
+                            fontSize: '.48rem',
+                            background: 'rgba(0,0,0,0.78)',
+                            color: 'var(--gold)',
+                            padding: '1px 4px',
+                            letterSpacing: '.06em',
+                          }}
+                        >
+                          {i + 1}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col gap-2">
+                        <div className="flex items-baseline gap-2">
+                          <span
+                            className="font-display text-foreground"
+                            style={{ fontSize: '.82rem', letterSpacing: '.03em' }}
+                          >
+                            {resolveHeroDisplayName(hero.name)}
+                          </span>
+                          <span
+                            className="font-mono"
+                            style={{ fontSize: '.65rem', color: 'var(--gold)', opacity: 0.85 }}
+                          >
+                            Lv.{hero.level}
+                          </span>
+                          <span className="font-mono text-muted" style={{ fontSize: '.6rem' }}>
+                            {hero.xp.toLocaleString()} xp
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-6 gap-y-1">
+                          {(
+                            [
+                              ['Deaths', hero.deaths],
+                              ['Dmg dealt', hero.damage_dealt.toLocaleString()],
+                              ['Dmg recv', hero.damage_received.toLocaleString()],
+                              ['Healing', hero.healing_done.toLocaleString()],
+                            ] as Array<[string, string | number]>
+                          ).map(([label, val]) => (
+                            <span key={label} className="flex flex-col gap-0.5">
+                              <span
+                                className="text-muted"
+                                style={{ fontSize: '.53rem', letterSpacing: '.06em' }}
+                              >
+                                {label}
+                              </span>
+                              <span
+                                className="font-mono text-foreground"
+                                style={{ fontSize: '.68rem' }}
+                              >
+                                {val}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ),
+          )}
+        </div>
+      )}
+
       {/* Teams */}
       <div className="flex gap-3 flex-wrap">
         {teams.map((team, ti) => {
@@ -1925,19 +1545,38 @@ export default function MemoryGameView() {
         })}
       </div>
 
-      {/* Global charts */}
-      <div className="flex flex-col gap-8">
-        <EconomyChart players={playerData} />
-        <ApmChart players={playerData} />
-        <FoodChart players={playerData} />
-        <CombinedArmyChart players={playerData} />
+      {/* Chart toggles */}
+      <div className="flex flex-wrap gap-2">
+        {(Object.keys(CHART_LABELS) as ChartKey[]).map((key) => {
+          const active = visibleCharts.has(key)
+          return (
+            <button
+              key={key}
+              onClick={() => toggleChart(key)}
+              className="font-display"
+              style={{
+                fontSize: '.6rem',
+                letterSpacing: '.12em',
+                padding: '4px 10px',
+                border: active ? '1px solid rgba(200,160,80,0.55)' : '1px solid var(--border)',
+                background: active ? 'rgba(200,160,80,0.1)' : 'var(--surface)',
+                color: active ? 'var(--gold)' : 'var(--muted)',
+                cursor: 'pointer',
+                transition: 'border-color .15s, background .15s, color .15s',
+              }}
+            >
+              {CHART_LABELS[key]}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Per-player cards */}
-      <div className="flex flex-col gap-6">
-        {playerData.map((p, i) => (
-          <PlayerSection key={i} player={p} />
-        ))}
+      {/* Global charts */}
+      <div className="flex flex-col gap-8">
+        {visibleCharts.has('economy') && <EconomyChart players={playerData} />}
+        {visibleCharts.has('lumber') && <LumberChart players={playerData} />}
+        {visibleCharts.has('food') && <FoodChart players={playerData} />}
+        {visibleCharts.has('army') && <CombinedArmyChart players={playerData} />}
       </div>
     </div>
   )
